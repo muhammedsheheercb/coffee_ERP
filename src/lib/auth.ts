@@ -17,27 +17,40 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
+        const start = Date.now();
         try {
           await connectDB();
           const email = credentials.email.toLowerCase().trim();
           const user = await User.findOne({ email });
 
-          if (!user) throw new Error("No user found with this email");
+          if (!user) {
+            console.warn(`[authorize] No user found: ${email}`);
+            return null;
+          }
 
           const isValid = await bcrypt.compare(
             credentials.password,
             user.password as string
           );
 
-          if (!isValid) throw new Error("Invalid password");
+          if (!isValid) {
+            console.warn(`[authorize] Invalid password for: ${email}`);
+            return null;
+          }
 
+          console.log(`[authorize] Success for: ${email} (${Date.now() - start}ms)`);
           return {
             id:    user._id.toString(),
             email: user.email,
             role:  user.role,
           };
-        } catch (err) {
-          console.error("[authorize error]", err);
+        } catch (err: any) {
+          const duration = Date.now() - start;
+          console.error("[authorize] FATAL ERROR", {
+            message:    err.message,
+            durationMs: duration,
+            email:      credentials?.email,
+          });
           return null;
         }
       },
