@@ -91,11 +91,31 @@ export default function EditSalePage() {
         value: i._id, label: `${i.name} — ${formatCurrency(i.salesAmount)}`, data: i,
     }));
 
-    const addItem = (opt: ISelectOption | null) => {
+    const addItem = async (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
-        // Removed: if (cart.find(c => c.itemId === item._id)) return; // Allow duplicates
         
+        // Fetch last sale price for this customer and item
+        if (selCustomer) {
+            try {
+                const res = await fetch(`/api/sales/last-price?customerId=${selCustomer.value}&itemId=${item._id}`);
+                const data = await res.json();
+                if (data.success && data.lastPrice !== null) {
+                    toast(`Last sold to this customer at ${formatCurrency(data.lastPrice)}`, {
+                        icon: '💰',
+                        duration: 6000,
+                        style: {
+                            borderRadius: '10px',
+                            background: '#333',
+                            color: '#fff',
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching last price:", error);
+            }
+        }
+
         const formatDateStr = (d: any): string => {
             if (!d) return "";
             try {

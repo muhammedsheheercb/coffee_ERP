@@ -75,6 +75,7 @@ const SaleSchema = new Schema<ISaleDocument>(
 
 SaleSchema.index({ date: -1 });
 SaleSchema.index({ customerId: 1 });
+SaleSchema.index({ customerId: 1, "items.itemId": 1, date: -1 });
 
 const Sale: Model<ISaleDocument> =
   mongoose.models.Sale ?? mongoose.model<ISaleDocument>("Sale", SaleSchema);

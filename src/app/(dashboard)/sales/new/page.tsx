@@ -13,6 +13,7 @@ import { formatCurrency, formatDateInput } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 interface CartItem extends ISaleItem {
     _itemRef: IItem;
@@ -70,10 +71,30 @@ export default function NewSalePage() {
         data: i,
     }));
 
-    const addItem = useCallback((opt: ISelectOption | null) => {
+    const addItem = useCallback(async (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
-        // Removed: if (cart.find(c => c.itemId === item._id)) return; // Support multiple rows for same item
+
+        // Fetch last sale price for this customer and item
+        if (selCustomer) {
+            try {
+                const res = await fetch(`/api/sales/last-price?customerId=${selCustomer.value}&itemId=${item._id}`);
+                const data = await res.json();
+                if (data.success && data.lastPrice !== null) {
+                    toast(`Last sold to this customer at ${formatCurrency(data.lastPrice)}`, {
+                        icon: '💰',
+                        duration: 6000,
+                        style: {
+                            borderRadius: '10px',
+                            background: '#333',
+                            color: '#fff',
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching last price:", error);
+            }
+        }
         
         // Helper to format date safely
         const formatDateStr = (d: any): string => {
@@ -100,7 +121,7 @@ export default function NewSalePage() {
             batch: "",
             _itemRef: item,
         }]);
-    }, [cart]);
+    }, [selCustomer, cart]);
 
     const updateItem = (idx: number, updates: Partial<CartItem>) => {
         setCart(prev => prev.map((c, i) => {
