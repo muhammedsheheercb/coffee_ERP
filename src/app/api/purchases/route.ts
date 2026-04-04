@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const search      = searchParams.get("search") || "";
     const page        = parseInt(searchParams.get("page") || "1");
     const limit       = parseInt(searchParams.get("limit") || "10");
-    const sortBy      = searchParams.get("sortBy") || "date";
+    const sortBy      = searchParams.get("sortBy") || "createdAt";
     const sortOrder   = searchParams.get("sortOrder") === "asc" ? 1 : -1;
     const startDate   = searchParams.get("startDate");
     const endDate     = searchParams.get("endDate");
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/purchases — saves purchase + increases item qty + updates supplier credit
+// POST /api/purchases
 export async function POST(req: NextRequest) {
   const dbSession = await mongoose.startSession();
   dbSession.startTransaction();
@@ -92,20 +92,39 @@ export async function POST(req: NextRequest) {
     // 1 — create purchase
     const [purchase] = await Purchase.create([{ ...body, purchaseNumber }], { session: dbSession });
 
-    // 2 — increase item quantities
-    for (const item of body.items) {
+    // 2 — increase item quantities and update dates
+    for (const purchaseItem of body.items) {
       await Item.findByIdAndUpdate(
-        item.itemId,
-        { $inc: { quantity: item.quantity } },
+        purchaseItem.itemId,
+        { 
+          $inc: { quantity: purchaseItem.quantity },
+          $set: { 
+            purchaseAmount: purchaseItem.price,
+            salesAmount: purchaseItem.sellingPrice,
+            manufacturingDate: purchaseItem.manufacturingDate,
+            expiryDate: purchaseItem.expiryDate 
+          }
+        },
         { session: dbSession, new: true }
       );
     }
 
-    // 3 — if credit purchase, increase supplier credit balance
+    // 3 — if credit purchase, increase supplier credit balance and record history
     if (body.paymentType === "credit") {
       await Supplier.findByIdAndUpdate(
         body.supplierId,
-        { $inc: { creditBalance: body.total } },
+        { 
+          $inc: { creditBalance: body.total, openingBalance: body.total },
+          $push: { 
+            balanceHistory: {
+              date: new Date(),
+              amount: body.total,
+              type: "adjustment",
+              paymentMethod: "credit", // Explicit mode
+              note: `Purchase #${purchaseNumber}`
+            }
+          }
+        },
         { session: dbSession }
       );
     }

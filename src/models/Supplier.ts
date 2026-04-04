@@ -3,8 +3,16 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface ISupplierDocument extends Document {
   supplierNumber: string;
   name: string;
-  itemsProvided: mongoose.Types.ObjectId[];
+  itemsProvided: string[];
+  openingBalance: number;
   creditBalance: number;
+  balanceHistory: {
+    date: Date;
+    amount: number;
+    type: "payment" | "adjustment";
+    paymentMethod?: "cash" | "bank" | "credit";
+    note?: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,18 +28,31 @@ const SupplierSchema = new Schema<ISupplierDocument>(
     name: {
       type: String,
       required: [true, "Supplier name is required"],
+      unique: true,
       trim: true,
     },
     itemsProvided: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Item",
+        type: String,
       },
     ],
+    openingBalance: {
+      type: Number,
+      default: 0,
+    },
     creditBalance: {
       type: Number,
       default: 0,
     },
+    balanceHistory: [
+      {
+        date: { type: Date, default: Date.now },
+        amount: { type: Number, required: true },
+        type: { type: String, enum: ["payment", "adjustment"], default: "payment" },
+        paymentMethod: { type: String, enum: ["cash", "bank", "credit"] },
+        note: { type: String },
+      },
+    ],
   },
   { timestamps: true }
 );

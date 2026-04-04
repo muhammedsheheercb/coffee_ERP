@@ -3,8 +3,11 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IItemDocument extends Document {
   itemNumber: string;
   name: string;
-  price: number;
+  salesAmount: number; 
+  purchaseAmount: number;
   quantity: number;
+  manufacturingDate?: Date;
+  expiryDate?: Date;
   supplierRef?: mongoose.Types.ObjectId;
   supplierName?: string;
   createdAt: Date;
@@ -24,17 +27,24 @@ const ItemSchema = new Schema<IItemDocument>(
       required: [true, "Item name is required"],
       trim: true,
     },
-    price: {
+    salesAmount: {
       type: Number,
-      required: [true, "Price is required"],
-      min: [0, "Price cannot be negative"],
+      required: false,
+      default: 0,
+    },
+    purchaseAmount: {
+      type: Number,
+      required: false,
+      default: 0,
     },
     quantity: {
       type: Number,
-      required: [true, "Quantity is required"],
+      required: false,
       min: [0, "Quantity cannot be negative"],
       default: 0,
     },
+    manufacturingDate: { type: Date },
+    expiryDate: { type: Date },
     supplierRef: {
       type: Schema.Types.ObjectId,
       ref: "Supplier",
@@ -44,12 +54,23 @@ const ItemSchema = new Schema<IItemDocument>(
       trim: true,
     },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+ItemSchema.virtual("stockValue").get(function() {
+  return (this.purchaseAmount || 0) * (this.quantity || 0);
+});
 
 ItemSchema.index({ name: "text", itemNumber: "text" });
 
-const Item: Model<IItemDocument> =
-  mongoose.models.Item ?? mongoose.model<IItemDocument>("Item", ItemSchema);
+if (mongoose.models.Item) {
+  delete mongoose.models.Item;
+}
+
+const Item: Model<IItemDocument> = mongoose.model<IItemDocument>("Item", ItemSchema);
 
 export default Item;

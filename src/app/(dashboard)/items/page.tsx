@@ -12,11 +12,12 @@ import Spinner from "@/components/ui/Spinner";
 import { useItems } from "@/hooks/useItems";
 import { IItem } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 const LIMIT = 10;
 
 export default function ItemsPage() {
-    const { items, total, totalPages, loading, fetchItems, createItem, updateItem, deleteItem } = useItems();
+    const { items, total, totalAmount, totalPages, loading, fetchItems, createItem, updateItem, deleteItem } = useItems();
 
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -27,6 +28,12 @@ export default function ItemsPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const { data: session } = useSession();
+    const isAdmin = session?.user?.role === "admin";
+    const perms = (session?.user?.permissions as any)?.items;
+    const canCreate = isAdmin || perms?.create;
+    const canEdit = isAdmin || perms?.edit;
+    const canDelete = isAdmin || perms?.delete;
 
     const load = useCallback(() => {
         fetchItems({ search, page, limit: LIMIT, sortBy, sortOrder });
@@ -69,11 +76,25 @@ export default function ItemsPage() {
                 title="Items"
                 subtitle={`${total} items total`}
                 actions={
-                    <Button icon={<Plus size={16} />} onClick={() => { setEditItem(null); setModalOpen(true); }}>
-                        New Item
-                    </Button>
+                    canCreate && (
+                        <Button icon={<Plus size={16} />} onClick={() => { setEditItem(null); setModalOpen(true); }}>
+                            New Item
+                        </Button>
+                    )
                 }
             />
+
+            {/* summary box */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p className="text-sm text-gray-500 mb-1">Total Items</p>
+                    <p className="text-2xl font-bold text-gray-800">{total}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p className="text-sm text-gray-500 mb-1">Total Stock Value</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                </div>
+            </div>
 
             {/* filters */}
             <div className="filter-bar">
@@ -91,45 +112,51 @@ export default function ItemsPage() {
                 <table className="w-full">
                     <thead>
                         <tr className="border-b border-gray-200">
-                            <th className="th">Item # <SortBtn col="itemNumber" /></th>
-                            <th className="th">Name <SortBtn col="name" /></th>
-                            <th className="th text-right">Price <SortBtn col="price" /></th>
-                            <th className="th text-right">Quantity <SortBtn col="quantity" /></th>
-                            <th className="th">Supplier</th>
-                            <th className="th">Created <SortBtn col="createdAt" /></th>
+                            <th className="th">Item Number <SortBtn col="itemNumber" /></th>
+                            <th className="th">Item Name <SortBtn col="name" /></th>
+                            <th className="th text-right">Qty <SortBtn col="quantity" /></th>
+                            <th className="th text-right">Purchase Amount <SortBtn col="purchaseAmount" /></th>
+                            <th className="th text-right">Sales Amount <SortBtn col="salesAmount" /></th>
+                            <th className="th text-right">Stock Value</th>
+                            <th className="th text-right tabular-nums">Creating Date <SortBtn col="createdAt" /></th>
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={8} className="py-16 text-center"><Spinner /></td></tr>
                         ) : items.length === 0 ? (
-                            <tr><td colSpan={7} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
+                            <tr><td colSpan={8} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
                         ) : items.map((item: IItem) => (
                             <tr key={item._id} className="tr-hover">
-                                <td className="td font-mono text-xs text-gray-500">{item.itemNumber}</td>
+                                <td className="td font-mono text-[10px] text-gray-400">{item.itemNumber}</td>
                                 <td className="td font-medium text-gray-800">{item.name}</td>
-                                <td className="td text-right">{formatCurrency(item.price)}</td>
                                 <td className="td text-right">
                                     <Badge
                                         label={String(item.quantity)}
                                         variant={item.quantity === 0 ? "danger" : item.quantity < 10 ? "warning" : "success"}
                                     />
                                 </td>
-                                <td className="td text-gray-500">{item.supplierName || "—"}</td>
-                                <td className="td text-gray-400 text-xs">{formatDate(item.createdAt)}</td>
+                                <td className="td text-right font-mono text-xs">{formatCurrency(item.purchaseAmount || 0)}</td>
+                                <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
+                                <td className="td text-right font-bold text-primary tracking-tight">{formatCurrency((item.purchaseAmount || 0) * item.quantity)}</td>
+                                <td className="td text-right text-gray-400 text-[10px]">{formatDate(item.createdAt)}</td>
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button
-                                            variant="ghost" size="xs"
-                                            icon={<Pencil size={14} />}
-                                            onClick={() => { setEditItem(item); setModalOpen(true); }}
-                                        />
-                                        <Button
-                                            variant="ghost" size="xs"
-                                            icon={<Trash2 size={14} className="text-red-500" />}
-                                            onClick={() => setDeleteId(item._id)}
-                                        />
+                                        {canEdit && (
+                                            <Button
+                                                variant="ghost" size="xs"
+                                                icon={<Pencil size={14} />}
+                                                onClick={() => { setEditItem(item); setModalOpen(true); }}
+                                            />
+                                        )}
+                                        {canDelete && (
+                                            <Button
+                                                variant="ghost" size="xs"
+                                                icon={<Trash2 size={14} className="text-red-500" />}
+                                                onClick={() => setDeleteId(item._id)}
+                                            />
+                                        )}
                                     </div>
                                 </td>
                             </tr>

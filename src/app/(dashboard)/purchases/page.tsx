@@ -12,6 +12,7 @@ import Spinner from "@/components/ui/Spinner";
 import { usePurchases } from "@/hooks/usePurchases";
 import { IPurchase, PaymentType } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 import InvoiceModal from "@/components/dashboard/InvoiceModal";
 const LIMIT = 10;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -20,7 +21,6 @@ const PAY_TYPES: { label: string; value: PaymentType | "" }[] = [
     { label: "All types", value: "" },
     { label: "Cash", value: "cash" },
     { label: "Credit", value: "credit" },
-    { label: "Debit", value: "debit" },
 ];
 
 export default function PurchasesPage() {
@@ -36,6 +36,13 @@ export default function PurchasesPage() {
     const [viewPurchase, setViewPurchase] = useState<IPurchase | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
+    const { data: session } = useSession();
+    const isAdmin = session?.user?.role === "admin";
+    const perms = (session?.user?.permissions as any)?.purchases;
+    const canCreate = isAdmin || perms?.create;
+    const canEdit = isAdmin || perms?.edit;
+    const canDelete = isAdmin || perms?.delete;
 
     const load = useCallback(() => {
         fetchPurchases({
@@ -76,47 +83,61 @@ export default function PurchasesPage() {
                 title="Purchases"
                 subtitle={`${total} records — Total: ${formatCurrency(totalAmount)}`}
                 actions={
-                    <Link href="/purchases/new">
-                        <Button icon={<Plus size={16} />}>New Purchase</Button>
-                    </Link>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            icon={<Search size={16} />} 
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={showFilters ? "bg-amber-50 border-amber-200 text-amber-600" : ""}
+                        >
+                            {showFilters ? "Hide Filters" : "Filters"}
+                        </Button>
+                        {canCreate && (
+                            <Link href="/purchases/new">
+                                <Button icon={<Plus size={16} />} className="bg-amber-600 hover:bg-amber-700 border-amber-600">New Purchase</Button>
+                            </Link>
+                        )}
+                    </div>
                 }
             />
 
-            <div className="filter-bar">
-                <Input
-                    placeholder="Search supplier or purchase #…"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    leftIcon={<Search size={15} />}
-                    wrapperClassName="w-64"
-                />
-                <select className="input-base w-32" value={month} onChange={e => setMonth(e.target.value ? Number(e.target.value) : "")}>
-                    <option value="">All months</option>
-                    {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-                </select>
-                <select className="input-base w-28" value={year} onChange={e => setYear(Number(e.target.value))}>
-                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                
-                <div className="flex items-center gap-2">
-                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} 
-                        className="input-base w-36 text-xs h-10" />
-                    <span className="text-gray-400">to</span>
-                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} 
-                        className="input-base w-36 text-xs h-10" />
-                    {(startDate || endDate) && (
-                        <button onClick={() => { setStartDate(""); setEndDate(""); }} 
-                            className="text-amber-600 text-xs font-semibold px-1">Clear</button>
-                    )}
-                </div>
+            {showFilters && (
+                <div className="filter-bar animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Input
+                        placeholder="Search supplier or purchase #…"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        leftIcon={<Search size={15} />}
+                        wrapperClassName="w-64"
+                    />
+                    <select className="input-base w-32" value={month} onChange={e => setMonth(e.target.value ? Number(e.target.value) : "")}>
+                        <option value="">All months</option>
+                        {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                    </select>
+                    <select className="input-base w-28" value={year} onChange={e => setYear(Number(e.target.value))}>
+                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    
+                    <div className="flex items-center gap-2">
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} 
+                            className="input-base w-36 text-xs h-10" />
+                        <span className="text-gray-400">to</span>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} 
+                            className="input-base w-36 text-xs h-10" />
+                        {(startDate || endDate) && (
+                            <button onClick={() => { setStartDate(""); setEndDate(""); }} 
+                                className="text-amber-600 text-xs font-semibold px-1">Clear</button>
+                        )}
+                    </div>
 
-                <select className="input-base w-36" value={payType} onChange={e => setPayType(e.target.value as PaymentType | "")}>
-                    {PAY_TYPES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
-            </div>
+                    <select className="input-base w-36" value={payType} onChange={e => setPayType(e.target.value as PaymentType | "")}>
+                        {PAY_TYPES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </select>
+                </div>
+            )}
 
             <div className="card px-5 py-3 flex items-center justify-between">
-                <span className="text-sm text-gray-500">Filtered total</span>
+                <span className="text-sm text-gray-500">Total Stock Value Purchased</span>
                 <span className="text-lg font-bold text-amber-600">{formatCurrency(totalAmount)}</span>
             </div>
 
@@ -128,7 +149,7 @@ export default function PurchasesPage() {
                             <th className="th">Supplier</th>
                             <th className="th">Date</th>
                             <th className="th text-center">Items</th>
-                            <th className="th text-right">Total</th>
+                            <th className="th text-right">Stock Value</th>
                             <th className="th text-center">Payment</th>
                             <th className="th text-right">Actions</th>
                         </tr>
@@ -146,8 +167,13 @@ export default function PurchasesPage() {
                                     <div className="text-xs text-gray-400">{p.supplierNumber}</div>
                                 </td>
                                 <td className="td text-gray-500 text-xs">{formatDate(p.date)}</td>
-                                <td className="td text-center">
-                                    <Badge label={`${p.items.length} items`} variant="info" />
+                                <td className="td">
+                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                        {p.items.map((item, i) => (
+                                            <Badge key={i} label={item.itemName} variant="info" className="text-[10px] px-1.5 py-0" />
+                                        ))}
+                                    </div>
+                                    <div className="text-[10px] text-gray-400 mt-1">{p.items.length} items total</div>
                                 </td>
                                 <td className="td text-right font-semibold text-gray-800">{formatCurrency(p.total)}</td>
                                 <td className="td text-center">
@@ -159,11 +185,15 @@ export default function PurchasesPage() {
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewPurchase(p)} />
-                                        <Link href={`/purchases/edit/${p._id}`}>
-                                            <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-amber-500" />} />
-                                        </Link>
-                                        <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />}
-                                            onClick={() => setDeleteId(p._id)} />
+                                        {canEdit && (
+                                            <Link href={`/purchases/edit/${p._id}`}>
+                                                <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-amber-500" />} />
+                                            </Link>
+                                        )}
+                                        {canDelete && (
+                                            <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />}
+                                                onClick={() => setDeleteId(p._id)} />
+                                        )}
                                     </div>
                                 </td>
                             </tr>

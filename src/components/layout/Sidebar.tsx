@@ -5,23 +5,63 @@ import { signOut } from "next-auth/react";
 import {
     LayoutDashboard, Package, Users, ShoppingCart,
     TruckIcon, Briefcase, LogOut, ChevronLeft, ChevronRight,
-    ReceiptText, Receipt,
+    ReceiptText, Receipt, Undo2, Ban, ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/items", label: "Items", icon: Package },
-    { href: "/customers", label: "Customers", icon: Users },
-    { href: "/sales", label: "Sales", icon: ReceiptText },
-    { href: "/purchases", label: "Purchases", icon: ShoppingCart },
-    { href: "/expenses", label: "Expenses", icon: Receipt },
-    { href: "/suppliers", label: "Suppliers", icon: TruckIcon },
+    { href: "/", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard" },
+    { href: "/items", label: "Items", icon: Package, permission: "items" },
+    { href: "/customers", label: "Customers", icon: Users, permission: "customers" },
+    { href: "/sales", label: "Sales", icon: ReceiptText, permission: "sales" },
+    { href: "/purchases", label: "Purchases", icon: ShoppingCart, permission: "purchases" },
+    { href: "/expenses", label: "Expenses", icon: Receipt, permission: "expenses" },
+    { href: "/suppliers", label: "Suppliers", icon: TruckIcon, permission: "suppliers" },
+    { href: "/sales-returns", label: "Sales Returns", icon: Undo2, permission: "sales_returns" },
+    { href: "/damaged-items", label: "Damaged Items", icon: Ban, permission: "damaged_items" },
+    { href: "/users", label: "Users", icon: ShieldCheck, role: "admin" },
 ];
 
 export default function Sidebar() {
+    const { data: session, status } = useSession();
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
+    const userRole = (session?.user?.role || "").toLowerCase();
+    const permissions = session?.user?.permissions || {};
+    const isAuthenticated = status === "authenticated";
+    const isAuthenticating = status === "loading";
+
+    const filteredNavItems = navItems.filter(item => {
+        // While loading session, show typical modules to avoid a jarring empty sidebar
+        if (isAuthenticating) return true;
+
+        // If explicitly unauthenticated, hide everything
+        if (status === "unauthenticated") return false;
+
+        // Admins see EVERYTHING - no exceptions
+        if (userRole === "admin") return true;
+
+        // Dashboard is the landing zone - always visible for all authenticated users
+        if (item.permission === "dashboard") return true;
+
+        // Check module-specific permissions
+        if (item.permission) {
+            const p = (permissions as any)?.[item.permission];
+            
+            // Handle new object-based permissions (viewing requires any of the actions to be true)
+            if (p && typeof p === 'object') {
+                return p.view === true || p.create === true || p.edit === true || p.delete === true;
+            }
+
+            // Fallback for legacy boolean permissions (ticked = viewable)
+            if (p === true) return true;
+        }
+
+        return false;
+    });
+
+
     const w = collapsed ? 64 : 240;
 
     return (
@@ -36,7 +76,7 @@ export default function Sidebar() {
 
             {/* nav */}
             <nav style={{ flex: 1, padding: "16px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
-                {navItems.map(({ href, label, icon: Icon }) => {
+                {filteredNavItems.map(({ href, label, icon: Icon }) => {
                     const active = pathname === href || (href !== "/" && pathname.startsWith(href));
                     return (
                         <Link key={href} href={href} title={collapsed ? label : undefined}

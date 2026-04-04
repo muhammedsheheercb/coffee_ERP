@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Sale from "@/models/Sale";
 import Item from "@/models/Item";
+import Customer from "@/models/Customer";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -75,6 +76,21 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     // Reverse inventory impact before delete
     for (const item of sale.items) {
       await Item.findByIdAndUpdate(item.itemId, { $inc: { quantity: item.quantity } });
+    }
+
+    // Reverse customer balance impact if it was a credit sale
+    if (sale.paymentType === "credit" && sale.customerId) {
+        await Customer.findByIdAndUpdate(sale.customerId, {
+            $inc: { creditBalance: -sale.total, openingBalance: -sale.total },
+            $push: {
+                balanceHistory: {
+                    date: new Date(),
+                    amount: sale.total,
+                    type: "payment",
+                    note: `CANCELLED Credit Sale #${sale.saleNumber}`
+                }
+            }
+        });
     }
 
     await Sale.findByIdAndDelete(id);

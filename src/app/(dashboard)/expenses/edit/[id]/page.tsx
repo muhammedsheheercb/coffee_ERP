@@ -10,6 +10,7 @@ import { useExpenses } from "@/hooks/useExpenses";
 import { PaymentType } from "@/types";
 import { formatDateInput } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 const CATEGORIES = ["Office", "Travel", "Utilities", "Marketing", "Salaries", "Rent", "Others"];
 
@@ -17,6 +18,19 @@ export default function EditExpensePage() {
     const router = useRouter();
     const { id } = useParams();
     const { updateExpense } = useExpenses();
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated") {
+            const isAdmin = session?.user?.role === "admin";
+            const canEdit = isAdmin || (session?.user?.permissions as any)?.expenses?.edit;
+            if (!canEdit) {
+                router.push("/expenses");
+            }
+        }
+    }, [session, status, router]);
 
     const [form, setForm] = useState({
         title: "",
@@ -85,14 +99,14 @@ export default function EditExpensePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <Input
-                        label="Amount (SAR)"
+                        label="Amount (OMR)"
                         type="number"
                         min={0}
-                        step="0.01"
+                        step="0.001"
                         value={form.amount}
                         onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
                         required
-                        leftIcon={<DollarSign size={16} />}
+                        leftIcon={<CreditCard size={16} />}
                     />
                     <Input
                         label="Date"
@@ -119,7 +133,7 @@ export default function EditExpensePage() {
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment via</label>
                         <div className="flex gap-2">
-                            {(["cash", "credit", "debit"] as PaymentType[]).map(t => (
+                             {(["cash", "credit"] as PaymentType[]).map(t => (
                                 <button
                                     key={t}
                                     type="button"

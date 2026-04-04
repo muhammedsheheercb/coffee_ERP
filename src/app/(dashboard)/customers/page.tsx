@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Search, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Pencil, Trash2, Eye, PlusCircle } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -8,10 +8,13 @@ import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import CustomerModal from "@/components/customers/CustomerModal";
+import BalanceAdjustmentModal from "@/components/customers/BalanceAdjustmentModal";
+import BalanceHistoryModal from "@/components/customers/BalanceHistoryModal";
 import Spinner from "@/components/ui/Spinner";
 import { useCustomers } from "@/hooks/useCustomers";
 import { ICustomer } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 const LIMIT = 10;
 
@@ -27,6 +30,21 @@ export default function CustomersPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+    const { data: session } = useSession();
+    const isAdmin = session?.user?.role === "admin";
+    const perms = (session?.user?.permissions as any)?.customers;
+    const canCreate = isAdmin || perms?.create;
+    const canEdit = isAdmin || perms?.edit;
+    const canDelete = isAdmin || perms?.delete;
+
+    // Balance Adjustment
+    const [adjustModalOpen, setAdjustModalOpen] = useState(false);
+    const [adjustCustomer, setAdjustCustomer] = useState<ICustomer | null>(null);
+    // Balance History
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+    const [historyCustomer, setHistoryCustomer] = useState<ICustomer | null>(null);
 
     const load = useCallback(() => {
         fetchCustomers({ search, page, limit: LIMIT, sortBy, sortOrder });
@@ -40,11 +58,19 @@ export default function CustomersPage() {
         else { setSortBy(col); setSortOrder("asc"); }
     };
 
-    const handleSubmit = async (data: Parameters<typeof createCustomer>[0]) => {
+    const handleSubmit = async (data: any) => {
         setSaving(true);
         const ok = editCustomer ? await updateCustomer(editCustomer._id, data) : await createCustomer(data);
         setSaving(false);
         if (ok) { setModalOpen(false); setEditCustomer(null); load(); }
+    };
+
+    const handleAdjustBalance = async (data: { adjustAmount: number; adjustType: "add" | "subtract"; date: string }) => {
+        if (!adjustCustomer) return;
+        setSaving(true);
+        const ok = await updateCustomer(adjustCustomer._id, data as any);
+        setSaving(false);
+        if (ok) { setAdjustModalOpen(false); setAdjustCustomer(null); load(); }
     };
 
     const handleDelete = async () => {
@@ -53,6 +79,24 @@ export default function CustomersPage() {
         const ok = await deleteCustomer(deleteId);
         setDeleting(false);
         if (ok) { setDeleteId(null); load(); }
+    };
+
+    const handleViewHistory = async (c: ICustomer) => {
+        setActiveHistoryId(c._id);
+        setHistoryLoading(true);
+        try {
+            const res = await fetch(`/api/customers/${c._id}?t=${Date.now()}`);
+            const data = await res.json();
+            if (data.success) {
+                setHistoryCustomer(data.data);
+                setHistoryModalOpen(true);
+            }
+        } catch (err) {
+            console.error("Failed to fetch history:", err);
+        } finally {
+            setHistoryLoading(false);
+            setActiveHistoryId(null);
+        }
     };
 
     const SortBtn = ({ col }: { col: string }) => (
@@ -67,9 +111,11 @@ export default function CustomersPage() {
                 title="Customers"
                 subtitle={`${total} customers total`}
                 actions={
-                    <Button icon={<Plus size={16} />} onClick={() => { setEditCustomer(null); setModalOpen(true); }}>
-                        New Customer
-                    </Button>
+                    canCreate && (
+                        <Button icon={<Plus size={16} />} onClick={() => { setEditCustomer(null); setModalOpen(true); }}>
+                            New Customer
+                        </Button>
+                    )
                 }
             />
 
@@ -90,9 +136,9 @@ export default function CustomersPage() {
                             <th className="th">Customer # <SortBtn col="customerNumber" /></th>
                             <th className="th">Name <SortBtn col="name" /></th>
                             <th className="th">Mobile</th>
-                            <th className="th text-right">Credit Balance <SortBtn col="creditBalance" /></th>
+                            <th className="th text-right">Balance <SortBtn col="creditBalance" /></th>
                             <th className="th">Joined <SortBtn col="createdAt" /></th>
-                            <th className="th text-right">Actions</th>
+                            <th className="th text-right px-6">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -106,18 +152,33 @@ export default function CustomersPage() {
                                 <td className="td font-medium text-gray-800">{c.name}</td>
                                 <td className="td text-gray-500">{c.mobile}</td>
                                 <td className="td text-right">
-                                    <Badge
-                                        label={formatCurrency(c.creditBalance)}
-                                        variant={c.creditBalance > 0 ? "warning" : c.creditBalance < 0 ? "success" : "default"}
-                                    />
+                                    <div className="flex items-center justify-end gap-1.5">
+                                        <Badge
+                                            label={formatCurrency(c.creditBalance || 0)}
+                                            variant={(c.creditBalance || 0) > 0 ? "warning" : (c.creditBalance || 0) < 0 ? "danger" : "success"}
+                                        />
+                                        <Button variant="ghost" size="xs" icon={<PlusCircle size={14} className="text-indigo-500" />} 
+                                            onClick={() => { setAdjustCustomer(c); setAdjustModalOpen(true); }} 
+                                            title="Add Payment / Adjustment"
+                                        />
+                                        <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-400 hover:text-indigo-600 transition-colors" />} 
+                                            onClick={() => handleViewHistory(c)}
+                                            title="Full Statement"
+                                            loading={historyLoading && activeHistoryId === c._id}
+                                        />
+                                    </div>
                                 </td>
                                 <td className="td text-gray-400 text-xs">{formatDate(c.createdAt)}</td>
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button variant="ghost" size="xs" icon={<Pencil size={14} />}
-                                            onClick={() => { setEditCustomer(c); setModalOpen(true); }} />
-                                        <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />}
-                                            onClick={() => setDeleteId(c._id)} />
+                                        {canEdit && (
+                                            <Button variant="ghost" size="xs" icon={<Pencil size={14} />}
+                                                onClick={() => { setEditCustomer(c); setModalOpen(true); }} />
+                                        )}
+                                        {canDelete && (
+                                            <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />}
+                                                onClick={() => setDeleteId(c._id)} />
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -136,6 +197,22 @@ export default function CustomersPage() {
                 customer={editCustomer}
                 loading={saving}
             />
+
+            <BalanceAdjustmentModal
+                open={adjustModalOpen}
+                onClose={() => { setAdjustModalOpen(false); setAdjustCustomer(null); }}
+                onSubmit={handleAdjustBalance}
+                entityName={adjustCustomer?.name || ""}
+                loading={saving}
+            />
+
+            <BalanceHistoryModal
+                open={historyModalOpen}
+                onClose={() => { setHistoryModalOpen(false); setHistoryCustomer(null); }}
+                history={historyCustomer?.balanceHistory || []}
+                entityName={historyCustomer?.name || ""}
+            />
+
             <ConfirmModal
                 open={!!deleteId}
                 onClose={() => setDeleteId(null)}

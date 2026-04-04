@@ -8,16 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 
 // ─── Currency format ────────────────────────────────
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-SA", {
+  return new Intl.NumberFormat("en-OM", {
     style: "currency",
-    currency: "SAR",
-    maximumFractionDigits: 2,
+    currency: "OMR",
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   }).format(amount);
 }
 
 // ─── Date format ────────────────────────────────────
 export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("en-SA", {
+  return new Intl.DateTimeFormat("en-OM", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -30,7 +31,7 @@ export function formatDateInput(date: Date | string): string {
 
 // ─── Month name ─────────────────────────────────────
 export function getMonthName(month: number): string {
-  return new Intl.DateTimeFormat("en-SA", { month: "short" }).format(
+  return new Intl.DateTimeFormat("en-OM", { month: "short" }).format(
     new Date(2024, month - 1, 1)
   );
 }
@@ -43,6 +44,12 @@ export function generateUniqueNumber(prefix: string): string {
     .padStart(3, "0");
   return `${prefix}-${ts}${rand}`;
 }
+
+export const generateCustomerID = () => generateUniqueNumber("CUST");
+export const generateItemID = () => generateUniqueNumber("ITEM");
+export const generateSupplierID = () => generateUniqueNumber("SUPP");
+export const generatePurchaseID = () => generateUniqueNumber("PUR");
+export const generateSaleID = () => generateUniqueNumber("SALE");
 
 // ─── Truncate text ───────────────────────────────────
 export function truncate(str: string, max: number): string {

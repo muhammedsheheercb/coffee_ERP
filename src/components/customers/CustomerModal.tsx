@@ -8,11 +8,13 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { ICustomer } from "@/types";
 
+import { generateCustomerID } from "@/lib/utils";
+
 const schema = z.object({
   customerNumber: z.string().min(1, "Customer number is required"),
   name: z.string().min(1, "Name is required"),
   mobile: z.string().min(10, "Enter a valid mobile number"),
-  creditBalance: z.coerce.number().min(0).default(0),
+  openingBalance: z.coerce.number().default(0),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -49,9 +51,14 @@ export default function CustomerModal({
               customerNumber: customer.customerNumber,
               name: customer.name,
               mobile: customer.mobile,
-              creditBalance: customer.creditBalance,
+              openingBalance: customer.creditBalance || 0,
             }
-          : { customerNumber: "", name: "", mobile: "", creditBalance: 0 },
+          : { 
+              customerNumber: generateCustomerID(), 
+              name: "", 
+              mobile: "", 
+              openingBalance: 0 
+            },
       );
     }
   }, [open, customer, reset]);
@@ -82,6 +89,8 @@ export default function CustomerModal({
             label="Customer number"
             placeholder="CUST-001"
             required
+            readOnly
+            disabled
             error={errors.customerNumber?.message}
             {...register("customerNumber")}
           />
@@ -102,18 +111,17 @@ export default function CustomerModal({
             {...register("mobile")}
           />
           <Input
-            label="Credit balance (₹)"
+            label="Balance (OMR)"
             type="number"
-            step="0.01"
-            placeholder="0.00"
-            error={errors.creditBalance?.message}
-            {...register("creditBalance")}
+            step="0.001"
+            placeholder="0.000"
+            error={errors.openingBalance?.message}
+            {...register("openingBalance")}
           />
         </div>
         {isEdit && (
           <p className="text-xs text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
-            Credit balance updates automatically on credit sales. Edit only to
-            manually adjust.
+            Opening balance can be adjusted manually from the customer list.
           </p>
         )}
       </form>

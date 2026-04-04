@@ -28,19 +28,26 @@ export async function GET(req: NextRequest) {
         ]}
       : {};
 
-    const [items, total] = await Promise.all([
+    const [items, total, summary] = await Promise.all([
       Item.find(query)
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
         .lean(),
       Item.countDocuments(query),
+      Item.aggregate([
+        { $match: query },
+        { $group: { _id: null, totalAmount: { $sum: { $multiply: ["$purchaseAmount", "$quantity"] } } } }
+      ])
     ]);
+
+    const totalAmount = summary[0]?.totalAmount || 0;
 
     return NextResponse.json({
       success: true,
       data: items,
       total,
+      totalAmount,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
@@ -62,7 +69,13 @@ export async function POST(req: NextRequest) {
 
     const itemNumber = body.itemNumber || generateUniqueNumber("ITM");
 
-    const item = await Item.create({ ...body, itemNumber });
+    const item = await Item.create({ 
+      ...body, 
+      itemNumber,
+      salesAmount: body.salesAmount ?? 0,
+      purchaseAmount: body.purchaseAmount ?? 0,
+      quantity: body.quantity ?? 0,
+    });
     return NextResponse.json({ success: true, data: item }, { status: 201 });
   } catch (err: unknown) {
     console.error("[POST /api/items]", err);

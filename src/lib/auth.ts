@@ -39,10 +39,21 @@ export const authOptions: NextAuthOptions = {
           }
 
           console.log(`[authorize] Success for: ${email} (${Date.now() - start}ms)`);
+          
+          let permissions = user.permissions;
+          // Ensure permissions is a plain object if it's a Mongoose Map
+          if (permissions && typeof (permissions as any).toJSON === 'function') {
+            permissions = (permissions as any).toJSON();
+          } else if (permissions instanceof Map) {
+            permissions = Object.fromEntries(permissions);
+          }
+
           return {
-            id:    user._id.toString(),
+            id: user._id.toString(),
+            name: user.name || null,
             email: user.email,
-            role:  user.role,
+            role: user.role === "admin" ? "admin" : "staff",
+            permissions: permissions || {},
           };
         } catch (err: any) {
           const duration = Date.now() - start;
@@ -63,15 +74,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id   = user.id;
-        token.role = (user as { id: string; role: string }).role;
+        token.id = user.id;
+        token.role = (user as any).role;
+        token.permissions = (user as any).permissions;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id   = token.id   as string;
+        session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.permissions = token.permissions as any;
       }
       return session;
     },

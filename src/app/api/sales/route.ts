@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const search      = searchParams.get("search") || "";
     const page        = parseInt(searchParams.get("page") || "1");
     const limit       = parseInt(searchParams.get("limit") || "10");
-    const sortBy      = searchParams.get("sortBy") || "date";
+    const sortBy      = searchParams.get("sortBy") || "createdAt";
     const sortOrder   = searchParams.get("sortOrder") === "asc" ? 1 : -1;
     const startDate   = searchParams.get("startDate");
     const endDate     = searchParams.get("endDate");
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/sales — saves sale + decreases item qty + updates customer credit
+// POST /api/sales
 export async function POST(req: NextRequest) {
   const dbSession = await mongoose.startSession();
   dbSession.startTransaction();
@@ -101,13 +101,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3 — if credit sale, increase customer credit balance
+    // 3 — if credit sale, increase customer credit balance and record history
     if (body.paymentType === "credit") {
-      await Customer.findByIdAndUpdate(
-        body.customerId,
-        { $inc: { creditBalance: body.total } },
-        { session: dbSession }
-      );
+      const customer = await Customer.findById(body.customerId).session(dbSession);
+      if (customer) {
+        if (!customer.balanceHistory) customer.balanceHistory = [];
+        
+        customer.creditBalance = (customer.creditBalance || 0) + Number(body.total);
+        customer.balanceHistory.push({
+          date: new Date(),
+          amount: Number(body.total),
+          type: "adjustment",
+          paymentMethod: "credit",
+          note: "Sales Entry"
+        });
+
+        await customer.save({ session: dbSession });
+      }
     }
 
     await dbSession.commitTransaction();

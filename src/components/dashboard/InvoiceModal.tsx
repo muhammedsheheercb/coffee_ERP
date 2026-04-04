@@ -54,7 +54,7 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
 
         autoTable(doc, {
             startY: 70,
-            head: [["#", "Item", "Qty", "Price", "Total"]],
+            head: [["#", "Item", "Qty", "Price", data.type === "Purchase" ? "Stock Value" : "Total"]],
             body: data.items.map((item, i) => [
                 i + 1,
                 item.itemName,
@@ -130,7 +130,7 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Item Details</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Qty</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Price</th>
-                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Total</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">{data.type === "Purchase" ? "Stock Value" : "Total"}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 text-sm">

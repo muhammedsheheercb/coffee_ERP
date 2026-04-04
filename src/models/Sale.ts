@@ -7,6 +7,10 @@ const SaleItemSchema = new Schema(
     itemName: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
+    discount: { type: Number, default: 0 },
+    manufacturingDate: { type: Date, required: true },
+    expiryDate: { type: Date, required: true },
+    batch: { type: String },
     total: { type: Number, required: true, min: 0 },
   },
   { _id: false }
@@ -23,12 +27,16 @@ export interface ISaleDocument extends Document {
     itemName: string;
     quantity: number;
     price: number;
+    discount: number;
+    manufacturingDate: Date;
+    expiryDate: Date;
+    batch?: string;
     total: number;
   }[];
   subtotal: number;
   tax: number;
   total: number;
-  paymentType: "cash" | "credit" | "debit";
+  paymentType: "cash" | "credit";
   date: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -55,7 +63,7 @@ const SaleSchema = new Schema<ISaleDocument>(
     total: { type: Number, required: true, min: 0 },
     paymentType: {
       type: String,
-      enum: ["cash", "credit", "debit"],
+      enum: ["cash", "credit"],
       required: true,
     },
     date: { type: Date, default: Date.now },

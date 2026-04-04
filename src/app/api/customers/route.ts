@@ -59,11 +59,28 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
-    const body = await req.json();
-    const customerNumber = body.customerNumber || generateUniqueNumber("CUST");
+    const { creditBalance, balanceHistory, ...safeBody } = await req.json();
+    const customerNumber = safeBody.customerNumber || generateUniqueNumber("CUST");
+    const openingBalance = Number(safeBody.openingBalance || 0);
 
-    const customer = await Customer.create({ ...body, customerNumber });
-    return NextResponse.json({ success: true, data: customer }, { status: 201 });
+    const customer = await Customer.create({ 
+        ...safeBody, 
+        customerNumber,
+        openingBalance,
+        creditBalance: openingBalance,
+        balanceHistory: openingBalance !== 0 ? [{
+            date: new Date(),
+            amount: openingBalance,
+            type: "adjustment",
+            paymentMethod: "credit",
+            note: "Opening Balance"
+        }] : []
+    });
+
+    // Re-fetch to ensure the full document with schema defaults and historical updates is returned
+    const fullCustomer = await Customer.findById(customer._id).lean();
+
+    return NextResponse.json({ success: true, data: fullCustomer }, { status: 201 });
   } catch (err: unknown) {
     console.error("[POST /api/customers]", err);
     const msg = err instanceof Error ? err.message : "Server error";

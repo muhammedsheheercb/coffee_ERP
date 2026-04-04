@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Purchase from "@/models/Purchase";
 import Item from "@/models/Item";
+import Supplier from "@/models/Supplier";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -46,10 +47,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
     // Update record
     const purchase = await Purchase.findByIdAndUpdate(id, body, { new: true, runValidators: true });
 
-    // Apply new inventory impact
+    // Apply new inventory impact and update item details
     if (purchase) {
         for (const item of purchase.items) {
-          await Item.findByIdAndUpdate(item.itemId, { $inc: { quantity: item.quantity } });
+          await Item.findByIdAndUpdate(item.itemId, { 
+            $inc: { quantity: item.quantity },
+            $set: { 
+              purchaseAmount: item.price, 
+              salesAmount: item.sellingPrice,
+              manufacturingDate: item.manufacturingDate,
+              expiryDate: item.expiryDate 
+            }
+          });
         }
     }
 
@@ -75,6 +84,21 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     // Reverse inventory impact before delete
     for (const item of purchase.items) {
       await Item.findByIdAndUpdate(item.itemId, { $inc: { quantity: -item.quantity } });
+    }
+
+    // Reverse supplier balance impact if it was a credit purchase
+    if (purchase.paymentType === "credit" && purchase.supplierId) {
+        await Supplier.findByIdAndUpdate(purchase.supplierId, {
+            $inc: { creditBalance: -purchase.total, openingBalance: -purchase.total },
+            $push: {
+                balanceHistory: {
+                    date: new Date(),
+                    amount: purchase.total,
+                    type: "payment",
+                    note: `CANCELLED Credit Purchase #${purchase.purchaseNumber}`
+                }
+            }
+        });
     }
 
     await Purchase.findByIdAndDelete(id);

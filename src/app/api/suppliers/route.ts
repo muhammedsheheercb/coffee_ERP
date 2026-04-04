@@ -60,8 +60,20 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const body = await req.json();
     const supplierNumber = body.supplierNumber || generateUniqueNumber("SUP");
+    const openingBalance = Number(body.openingBalance || 0);
 
-    const supplier = await Supplier.create({ ...body, supplierNumber });
+    const supplier = await Supplier.create({ 
+        ...body, 
+        supplierNumber,
+        openingBalance,
+        creditBalance: openingBalance,
+        balanceHistory: openingBalance !== 0 ? [{
+            date: new Date(),
+            amount: openingBalance,
+            type: "adjustment",
+            note: "Initial Opening Balance"
+        }] : []
+    });
     return NextResponse.json({ success: true, data: supplier }, { status: 201 });
   } catch (err: unknown) {
     console.error("[POST /api/suppliers]", err);

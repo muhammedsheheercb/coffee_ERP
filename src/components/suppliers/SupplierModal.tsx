@@ -8,10 +8,12 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { ISupplier } from "@/types";
 
+import { generateSupplierID } from "@/lib/utils";
+
 const schema = z.object({
     supplierNumber: z.string().min(1, "Supplier number is required"),
     name: z.string().min(1, "Name is required"),
-    creditBalance: z.coerce.number().default(0),
+    openingBalance: z.coerce.number().default(0),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -32,8 +34,16 @@ export default function SupplierModal({ open, onClose, onSubmit, supplier, loadi
     useEffect(() => {
         if (open) {
             reset(supplier
-                ? { supplierNumber: supplier.supplierNumber, name: supplier.name, creditBalance: supplier.creditBalance }
-                : { supplierNumber: "", name: "", creditBalance: 0 }
+                ? { 
+                    supplierNumber: supplier.supplierNumber, 
+                    name: supplier.name, 
+                    openingBalance: supplier.openingBalance || 0 
+                }
+                : { 
+                    supplierNumber: generateSupplierID(), 
+                    name: "", 
+                    openingBalance: 0 
+                }
             );
         }
     }, [open, supplier, reset]);
@@ -54,12 +64,12 @@ export default function SupplierModal({ open, onClose, onSubmit, supplier, loadi
         >
             <form id="supplier-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <Input label="Supplier number" placeholder="SUP-001" required error={errors.supplierNumber?.message} {...register("supplierNumber")} />
+                    <Input label="Supplier number" placeholder="SUP-001" required readOnly disabled error={errors.supplierNumber?.message} {...register("supplierNumber")} />
                     <Input label="Name" placeholder="Supplier name" required error={errors.name?.message}           {...register("name")} />
                 </div>
-                <Input label="Credit balance (₹)" type="number" step="0.01" placeholder="0.00"
+                <Input label="Opening balance (OMR)" type="number" step="0.001" placeholder="0.000"
                     hint="Amount you owe this supplier. Auto-updated on credit purchases."
-                    error={errors.creditBalance?.message} {...register("creditBalance")} />
+                    error={errors.openingBalance?.message} {...register("openingBalance")} />
             </form>
         </Modal>
     );

@@ -14,6 +14,7 @@ interface Filters {
 export function useItems() {
   const [items, setItems]           = useState<IItem[]>([]);
   const [total, setTotal]           = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading]       = useState(false);
 
@@ -28,10 +29,11 @@ export function useItems() {
       if (filters.sortOrder) params.set("sortOrder", filters.sortOrder);
 
       const res  = await fetch(`/api/items?${params}`);
-      const data: IPaginatedResponse<IItem> = await res.json();
+      const data: IPaginatedResponse<IItem> & { totalAmount: number } = await res.json();
       if (!data.success) throw new Error(data as unknown as string);
       setItems(data.data);
       setTotal(data.total);
+      setTotalAmount(data.totalAmount);
       setTotalPages(data.totalPages);
     } catch {
       toast.error("Failed to load items");
@@ -79,5 +81,5 @@ export function useItems() {
     }
   }, []);
 
-  return { items, total, totalPages, loading, fetchItems, createItem, updateItem, deleteItem };
+  return { items, total, totalAmount, totalPages, loading, fetchItems, createItem, updateItem, deleteItem };
 }

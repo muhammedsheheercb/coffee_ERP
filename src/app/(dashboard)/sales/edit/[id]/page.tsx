@@ -12,6 +12,7 @@ import { useSales } from "@/hooks/useSales";
 import { ICustomer, IItem, ISaleItem, ISelectOption, PaymentType } from "@/types";
 import { formatCurrency, formatDateInput } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 interface CartItem extends ISaleItem { _itemRef?: IItem }
 
@@ -19,6 +20,19 @@ export default function EditSalePage() {
     const router = useRouter();
     const { id } = useParams();
     const { updateSale } = useSales();
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated") {
+            const isAdmin = session?.user?.role === "admin";
+            const canEdit = isAdmin || (session?.user?.permissions as any)?.sales?.edit;
+            if (!canEdit) {
+                router.push("/sales");
+            }
+        }
+    }, [session, status, router]);
 
     const [customers, setCustomers] = useState<ICustomer[]>([]);
     const [items, setItems] = useState<IItem[]>([]);
@@ -44,7 +58,15 @@ export default function EditSalePage() {
                 if (sr.success) {
                     const s = sr.data;
                     setSelCustomer({ value: s.customerId, label: `${s.customerName} (${s.customerNumber})`, data: { _id: s.customerId, name: s.customerName, customerNumber: s.customerNumber } as ICustomer });
-                    setCart(s.items);
+                    
+                    // Format dates for cart items
+                    const formattedItems = s.items.map((item: any) => ({
+                        ...item,
+                        manufacturingDate: formatDateInput(item.manufacturingDate),
+                        expiryDate: formatDateInput(item.expiryDate)
+                    }));
+                    setCart(formattedItems);
+                    
                     setPaymentType(s.paymentType);
                     setTax(s.tax);
                     setDate(formatDateInput(s.date));
@@ -66,16 +88,30 @@ export default function EditSalePage() {
     }));
 
     const itemOptions: ISelectOption[] = items.map(i => ({
-        value: i._id, label: `${i.name} — ${formatCurrency(i.price)}`, data: i,
+        value: i._id, label: `${i.name} — ${formatCurrency(i.salesAmount)}`, data: i,
     }));
 
     const addItem = (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
         if (cart.find(c => c.itemId === item._id)) return;
+        
+        const formatDateStr = (d: any): string => {
+            if (!d) return "";
+            try {
+                const dateObj = new Date(d);
+                if (isNaN(dateObj.getTime())) return "";
+                return dateObj.toISOString().split('T')[0] || "";
+            } catch { return ""; }
+        };
+
         setCart(prev => [...prev, {
             itemId: item._id, itemNumber: item.itemNumber, itemName: item.name,
-            quantity: 1, price: item.price, total: item.price, _itemRef: item,
+            quantity: 1, price: item.salesAmount, total: item.salesAmount, batch: "", 
+            discount: 0,
+            manufacturingDate: formatDateStr(item.manufacturingDate) as string,
+            expiryDate: formatDateStr(item.expiryDate) as string,
+            _itemRef: item,
         }]);
     };
 
@@ -116,7 +152,7 @@ export default function EditSalePage() {
                             label="Customer"
                             options={customerOptions}
                             value={selCustomer}
-                            onChange={setSelCustomer}
+                            onChange={(opt) => setSelCustomer(opt)}
                             required
                         />
                     </div>
@@ -149,7 +185,10 @@ export default function EditSalePage() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-gray-200">
-                                    <th className="th">Item</th>
+                                    <th className="th text-left">Item Details</th>
+                                    <th className="th text-center">Batch</th>
+                                    <th className="th text-center">Mfg Date</th>
+                                    <th className="th text-center">Exp Date</th>
                                     <th className="th text-right">Unit Price</th>
                                     <th className="th text-center">Qty</th>
                                     <th className="th text-right">Total</th>
@@ -158,14 +197,29 @@ export default function EditSalePage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {cart.map((c, idx) => (
-                                    <tr key={c.itemId || idx}>
-                                        <td className="td">
+                                    <tr key={c.itemId || idx} className="align-top">
+                                        <td className="td text-left">
                                             <div className="font-medium text-gray-800">{c.itemName}</div>
                                             <div className="text-[10px] text-gray-400 font-mono tracking-tighter uppercase">{c.itemNumber}</div>
                                         </td>
+                                        <td className="td">
+                                            <input type="text" value={c.batch} placeholder="Batch"
+                                                onChange={e => setCart(prev => prev.map((it, i) => i === idx ? { ...it, batch: e.target.value } : it))}
+                                                className="w-full px-2 py-1 text-[10px] text-right border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500" />
+                                        </td>
+                                        <td className="td">
+                                            <input type="date" value={c.manufacturingDate}
+                                                onChange={e => setCart(prev => prev.map((it, i) => i === idx ? { ...it, manufacturingDate: e.target.value } : it))}
+                                                className="w-32 px-1 py-1 text-[10px] text-right border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500" />
+                                        </td>
+                                        <td className="td">
+                                            <input type="date" value={c.expiryDate}
+                                                onChange={e => setCart(prev => prev.map((it, i) => i === idx ? { ...it, expiryDate: e.target.value } : it))}
+                                                className="w-32 px-1 py-1 text-[10px] text-right border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500" />
+                                        </td>
                                         <td className="td text-right text-gray-600">{formatCurrency(c.price)}</td>
                                         <td className="td text-center">
-                                            <input type="number" value={c.quantity} onChange={e => updateQty(idx, Number(e.target.value))} className="input-base w-24 text-center mx-auto" />
+                                            <input type="number" value={c.quantity} onChange={e => updateQty(idx, Number(e.target.value))} className="w-16 px-1 py-1 text-center border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500 mx-auto block" />
                                         </td>
                                         <td className="td text-right font-semibold text-gray-800">{formatCurrency(c.total)}</td>
                                         <td className="td text-center">

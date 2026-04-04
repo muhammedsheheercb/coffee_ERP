@@ -11,8 +11,8 @@ interface SalesChartProps {
 }
 
 const fmt = (v: number) =>
-    v >= 1000 ? `SAR ${(v / 1000).toFixed(1)}K`
-        : `SAR ${v}`;
+    v >= 1000 ? `OMR ${(v / 1000).toFixed(1)}K`
+        : `OMR ${v}`;
 
 export default function SalesChart({ data }: SalesChartProps) {
     return (

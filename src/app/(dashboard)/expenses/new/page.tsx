@@ -8,12 +8,27 @@ import Input from "@/components/ui/Input";
 import { useExpenses } from "@/hooks/useExpenses";
 import { PaymentType } from "@/types";
 import { formatDateInput } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 const CATEGORIES = ["Office", "Travel", "Utilities", "Marketing", "Salaries", "Rent", "Others"];
 
 export default function NewExpensePage() {
     const router = useRouter();
     const { createExpense } = useExpenses();
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated") {
+            const isAdmin = session?.user?.role === "admin";
+            const canCreate = isAdmin || (session?.user?.permissions as any)?.expenses?.create;
+            if (!canCreate) {
+                router.push("/expenses");
+            }
+        }
+    }, [session, status, router]);
 
     const [form, setForm] = useState({
         title: "",
@@ -53,14 +68,14 @@ export default function NewExpensePage() {
                 <div className="grid grid-cols-2 gap-4">
                     {/* amount */}
                     <Input
-                        label="Amount (₹)"
+                        label="Amount (OMR)"
                         type="number"
                         min={0}
-                        step="0.01"
+                        step="0.001"
                         value={form.amount}
                         onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
                         required
-                        leftIcon={<DollarSign size={16} />}
+                        leftIcon={<CreditCard size={16} />}
                     />
                     {/* date */}
                     <Input
@@ -92,12 +107,12 @@ export default function NewExpensePage() {
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment via</label>
                         <div className="flex gap-2">
-                            {(["cash", "credit", "debit"] as PaymentType[]).map(t => (
+                            {(["cash", "bank", "credit"] as PaymentType[]).map(t => (
                                 <button
                                     key={t}
                                     type="button"
                                     onClick={() => setForm({ ...form, paymentType: t })}
-                                    className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors capitalize
+                                    className={`flex-1 py-2 rounded-lg text-[10px] font-bold border transition-all uppercase tracking-tighter
                     ${form.paymentType === t ? "bg-red-600 text-white border-red-600 shadow-md translate-y-[-1px]" : "border-gray-300 text-gray-600 hover:bg-gray-50 bg-white"}`}
                                 >
                                     {t}

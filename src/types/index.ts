@@ -1,12 +1,28 @@
-export type PaymentType = "cash" | "credit" | "debit";
+export type PaymentType = "cash" | "bank" | "credit";
 export type UserRole = "admin" | "staff";
+
+export interface IActionPermission {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+  approve?: boolean;
+  export?: boolean;
+}
+
+export interface IUserPermissions {
+  [key: string]: IActionPermission;
+}
 
 // ─── User ───────────────────────────────────────────
 export interface IUser {
   _id: string;
+  name: string;
   email: string;
-  password: string;
+  password?: string;
   role: UserRole;
+  permissions?: IUserPermissions;
+  isActive: boolean;
   createdAt: Date;
 }
 
@@ -15,8 +31,12 @@ export interface IItem {
   _id: string;
   itemNumber: string;
   name: string;
-  price: number;
+  salesAmount: number; // Selling Price (Sales Amount)
+  purchaseAmount: number; // Purchase Price (Purchase Amount)
   quantity: number;
+  stockValue: number; // Calculated field (Qty * Purchase Price)
+  manufacturingDate?: string;
+  expiryDate?: string;
   supplierRef?: string;
   supplierName?: string;
   createdAt: Date;
@@ -24,21 +44,32 @@ export interface IItem {
 }
 
 export interface IItemForm {
-  itemNumber: string;
+  itemNumber?: string;
   name: string;
-  price: number;
-  quantity: number;
+  salesAmount?: number;
+  purchaseAmount?: number;
+  quantity?: number;
   supplierRef?: string;
   supplierName?: string;
 }
 
 // ─── Customer ───────────────────────────────────────
+export interface IBalanceHistory {
+  date: string;
+  amount: number;
+  type: "payment" | "adjustment";
+  paymentMethod?: "cash" | "bank" | "credit";
+  note?: string;
+}
+
 export interface ICustomer {
   _id: string;
   customerNumber: string;
   name: string;
   mobile: string;
+  openingBalance: number;
   creditBalance: number;
+  balanceHistory?: IBalanceHistory[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +78,7 @@ export interface ICustomerForm {
   customerNumber: string;
   name: string;
   mobile: string;
+  openingBalance?: number;
   creditBalance?: number;
 }
 
@@ -56,7 +88,9 @@ export interface ISupplier {
   supplierNumber: string;
   name: string;
   itemsProvided: string[];
+  openingBalance: number;
   creditBalance: number;
+  balanceHistory?: IBalanceHistory[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,7 +99,7 @@ export interface ISupplierForm {
   supplierNumber: string;
   name: string;
   itemsProvided?: string[];
-  creditBalance?: number;
+  openingBalance?: number;
 }
 
 // ─── Sale ───────────────────────────────────────────
@@ -75,6 +109,10 @@ export interface ISaleItem {
   itemName: string;
   quantity: number;
   price: number;
+  discount: number;
+  manufacturingDate: string;
+  expiryDate: string;
+  batch?: string;
   total: number;
 }
 
@@ -112,7 +150,11 @@ export interface IPurchaseItem {
   itemNumber: string;
   itemName: string;
   quantity: number;
-  price: number;
+  price: number; // Purchase Unit Price
+  sellingPrice: number; // New Selling Price
+  manufacturingDate: string;
+  expiryDate: string;
+  batch?: string;
   total: number;
 }
 

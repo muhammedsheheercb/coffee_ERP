@@ -14,6 +14,7 @@ import { formatCurrency, formatDateInput } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 interface CartItem extends IPurchaseItem { _itemRef?: IItem }
 
@@ -21,6 +22,19 @@ export default function EditPurchasePage() {
     const router = useRouter();
     const { id } = useParams();
     const { updatePurchase } = usePurchases();
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated") {
+            const isAdmin = session?.user?.role === "admin";
+            const canEdit = isAdmin || (session?.user?.permissions as any)?.purchases?.edit;
+            if (!canEdit) {
+                router.push("/purchases");
+            }
+        }
+    }, [session, status, router]);
 
     const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
     const [items, setItems] = useState<IItem[]>([]);
@@ -45,8 +59,21 @@ export default function EditPurchasePage() {
                 if (ir.success) setItems(ir.data);
                 if (pr.success) {
                     const p = pr.data;
+                    const itemsInInv = ir.data || [];
                     setSelSupplier({ value: p.supplierId, label: `${p.supplierName} (${p.supplierNumber})`, data: { _id: p.supplierId, name: p.supplierName, supplierNumber: p.supplierNumber } as ISupplier });
-                    setCart(p.items);
+                    
+                    // Format dates and ensure sellingPrice is taken from record or inventory
+                    const formattedItems = p.items.map((pi: any) => {
+                        const invItem = itemsInInv.find((i: IItem) => i._id === pi.itemId);
+                        return {
+                            ...pi,
+                            sellingPrice: pi.sellingPrice || (invItem?.salesAmount || 0),
+                            manufacturingDate: formatDateInput(pi.manufacturingDate),
+                            expiryDate: formatDateInput(pi.expiryDate)
+                        };
+                    });
+                    setCart(formattedItems);
+                    
                     setPaymentType(p.paymentType);
                     setTax(p.tax);
                     setDate(formatDateInput(p.date));
@@ -68,7 +95,9 @@ export default function EditPurchasePage() {
     }));
 
     const itemOptions: ISelectOption[] = items.map(i => ({
-        value: i._id, label: `${i.name} — ${formatCurrency(i.price)}`, data: i,
+        value: i._id,
+        label: `${i.name} — Cost: ${formatCurrency(i.purchaseAmount || 0)} | Sale: ${formatCurrency(i.salesAmount || 0)}`,
+        data: i,
     }));
 
     const addItem = (opt: ISelectOption | null) => {
@@ -76,8 +105,17 @@ export default function EditPurchasePage() {
         const item = opt.data as IItem;
         if (cart.find(c => c.itemId === item._id)) return;
         setCart(prev => [...prev, {
-            itemId: item._id, itemNumber: item.itemNumber, itemName: item.name,
-            quantity: 1, price: item.price, total: item.price, _itemRef: item,
+            itemId: item._id,
+            itemNumber: item.itemNumber,
+            itemName: item.name,
+            quantity: 1,
+            price: item.purchaseAmount || 0, // Cost Price
+            sellingPrice: item.salesAmount || 0, // Current Selling Price
+            total: (item.purchaseAmount || 0),
+            manufacturingDate: formatDateInput(item.manufacturingDate || ""),
+            expiryDate: formatDateInput(item.expiryDate || ""),
+            batch: "",
+            _itemRef: item,
         }]);
     };
 
@@ -155,8 +193,11 @@ export default function EditPurchasePage() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-gray-200">
-                                    <th className="th">Item</th>
-                                    <th className="th text-right">Price</th>
+                                    <th className="th text-left">Item</th>
+                                    <th className="th text-right">Purchase Price</th>
+                                    <th className="th text-right">Sales Price</th>
+                                    <th className="th text-center">Mfg Date</th>
+                                    <th className="th text-center">Exp Date</th>
                                     <th className="th text-center">Qty</th>
                                     <th className="th text-right">Total</th>
                                     <th className="th" />
@@ -165,19 +206,38 @@ export default function EditPurchasePage() {
                             <tbody className="divide-y divide-gray-100">
                                 {cart.map((c, idx) => (
                                     <tr key={c.itemId || idx}>
-                                        <td className="td">
-                                            <div className="font-medium">{c.itemName}</div>
+                                        <td className="td text-left">
+                                            <div className="font-medium text-gray-900">{c.itemName}</div>
                                             <div className="text-xs text-gray-400">{c.itemNumber}</div>
                                         </td>
                                         <td className="td text-right">
-                                            <input type="number" value={c.price} onChange={e => updatePrice(idx, Number(e.target.value))} className="input-base w-24 text-right ml-auto" />
+                                            <input type="number" min={0} step="0.001" value={c.price}
+                                                onChange={e => updatePrice(idx, Number(e.target.value))}
+                                                className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500 ml-auto block" />
+                                        </td>
+                                        <td className="td text-right">
+                                            <input type="number" min={0} step="0.001" value={c.sellingPrice}
+                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, sellingPrice: Number(e.target.value) } : item))}
+                                                className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block" />
                                         </td>
                                         <td className="td text-center">
-                                            <input type="number" value={c.quantity} onChange={e => updateQty(idx, Number(e.target.value))} className="input-base w-20 text-center mx-auto" />
+                                            <input type="date" value={c.manufacturingDate}
+                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, manufacturingDate: e.target.value } : item))}
+                                                className="w-32 px-2 py-1.5 text-[10px] text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500" />
                                         </td>
-                                        <td className="td text-right font-semibold">{formatCurrency(c.total)}</td>
                                         <td className="td text-center">
-                                            <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />} onClick={() => removeItem(idx)} />
+                                            <input type="date" value={c.expiryDate}
+                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, expiryDate: e.target.value } : item))}
+                                                className="w-32 px-2 py-1.5 text-[10px] text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500" />
+                                        </td>
+                                        <td className="td text-center">
+                                            <input type="number" min={1} value={c.quantity}
+                                                onChange={e => updateQty(idx, Number(e.target.value))}
+                                                className="w-16 px-2 py-1.5 text-xs text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 mx-auto block" />
+                                        </td>
+                                        <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
+                                        <td className="td text-right">
+                                            <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-400 hover:text-red-600" />} onClick={() => removeItem(idx)} />
                                         </td>
                                     </tr>
                                 ))}
