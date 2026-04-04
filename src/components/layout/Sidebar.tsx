@@ -29,86 +29,161 @@ export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const userRole = (session?.user?.role || "").toLowerCase();
     const permissions = session?.user?.permissions || {};
-    const isAuthenticated = status === "authenticated";
     const isAuthenticating = status === "loading";
 
     const filteredNavItems = navItems.filter(item => {
-        // While loading session, show typical modules to avoid a jarring empty sidebar
         if (isAuthenticating) return true;
-
-        // If explicitly unauthenticated, hide everything
         if (status === "unauthenticated") return false;
-
-        // Admins see EVERYTHING - no exceptions
         if (userRole === "admin") return true;
-
-        // Dashboard is the landing zone - always visible for all authenticated users
         if (item.permission === "dashboard") return true;
-
-        // Check module-specific permissions
         if (item.permission) {
             const p = (permissions as any)?.[item.permission];
-            
-            // Handle new object-based permissions (viewing requires any of the actions to be true)
             if (p && typeof p === 'object') {
                 return p.view === true || p.create === true || p.edit === true || p.delete === true;
             }
-
-            // Fallback for legacy boolean permissions (ticked = viewable)
             if (p === true) return true;
         }
-
         return false;
     });
 
-
-    const w = collapsed ? 64 : 240;
+    const w = collapsed ? 72 : 260;
 
     return (
-        <aside style={{ position: "relative", width: w, minWidth: w, height: "100vh", background: "#fff", borderRight: "1px solid #e5e7eb", display: "flex", flexDirection: "column", transition: "width 0.2s" }}>
+        <aside style={{ 
+            position: "relative", 
+            width: w, 
+            minWidth: w, 
+            height: "100vh", 
+            background: "#ffffff", 
+            borderRight: "1px solid #f3f4f6", 
+            display: "flex", 
+            flexDirection: "column", 
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.02)"
+        }}>
             {/* logo */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: collapsed ? "20px 0" : "20px 16px", borderBottom: "1px solid #e5e7eb", justifyContent: collapsed ? "center" : "flex-start" }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Briefcase size={16} color="#fff" />
+            <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 12, 
+                padding: collapsed ? "24px 0" : "24px 20px", 
+                justifyContent: collapsed ? "center" : "flex-start",
+                marginBottom: 8
+            }}>
+                <div style={{ 
+                    width: 36, 
+                    height: 36, 
+                    borderRadius: 10, 
+                    background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    flexShrink: 0,
+                    boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)"
+                }}>
+                    <Briefcase size={18} color="#fff" />
                 </div>
-                {!collapsed && <span style={{ fontWeight: 700, fontSize: 15, color: "#111827", whiteSpace: "nowrap" }}>ERP System</span>}
+                {!collapsed && (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontWeight: 800, fontSize: 16, color: "#111827", letterSpacing: "-0.02em" }}>Coffee ERP</span>
+                        <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Management</span>
+                    </div>
+                )}
             </div>
 
             {/* nav */}
-            <nav style={{ flex: 1, padding: "16px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
+            <nav style={{ 
+                flex: 1, 
+                padding: "8px 12px", 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: 4, 
+                overflowY: "auto",
+                scrollbarWidth: "none"
+            }}>
                 {filteredNavItems.map(({ href, label, icon: Icon }) => {
                     const active = pathname === href || (href !== "/" && pathname.startsWith(href));
                     return (
                         <Link key={href} href={href} title={collapsed ? label : undefined}
-                            style={{ display: "flex", alignItems: "center", gap: 10, padding: collapsed ? "10px 0" : "10px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: "none", justifyContent: collapsed ? "center" : "flex-start", background: active ? "#eef2ff" : "transparent", color: active ? "#6366f1" : "#4b5563", transition: "background 0.15s" }}
+                            style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: 12, 
+                                padding: collapsed ? "12px 0" : "12px 14px", 
+                                borderRadius: 12, 
+                                fontSize: 14, 
+                                fontWeight: active ? 600 : 500, 
+                                textDecoration: "none", 
+                                justifyContent: collapsed ? "center" : "flex-start", 
+                                background: active ? "#f5f3ff" : "transparent", 
+                                color: active ? "#6366f1" : "#64748b", 
+                                transition: "all 0.2s ease",
+                                border: active ? "1px solid #e0e7ff" : "1px solid transparent"
+                            }}
                             onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                             onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                         >
-                            <Icon size={18} style={{ flexShrink: 0 }} />
+                            <Icon size={20} style={{ 
+                                flexShrink: 0,
+                                color: active ? "#6366f1" : "#94a3b8"
+                            }} />
                             {!collapsed && <span>{label}</span>}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* logout */}
-            <div style={{ padding: "8px 8px 16px" }}>
+            {/* user profile / logout */}
+            <div style={{ padding: "16px 12px 24px", borderTop: "1px solid #f3f4f6" }}>
                 <button onClick={() => signOut({ callbackUrl: "/login" })}
                     title={collapsed ? "Logout" : undefined}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: collapsed ? "10px 0" : "10px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500, border: "none", background: "transparent", color: "#6b7280", cursor: "pointer", justifyContent: collapsed ? "center" : "flex-start" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; (e.currentTarget as HTMLElement).style.color = "#ef4444"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#6b7280"; }}
+                    style={{ 
+                        width: "100%", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: 12, 
+                        padding: collapsed ? "12px 0" : "12px 14px", 
+                        borderRadius: 12, 
+                        fontSize: 14, 
+                        fontWeight: 500, 
+                        border: "none", 
+                        background: "transparent", 
+                        color: "#ef4444", 
+                        cursor: "pointer", 
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
-                    <LogOut size={18} style={{ flexShrink: 0 }} />
-                    {!collapsed && <span>Logout</span>}
+                    <LogOut size={20} style={{ flexShrink: 0 }} />
+                    {!collapsed && <span>Log Out</span>}
                 </button>
             </div>
 
             {/* collapse toggle */}
             <button onClick={() => setCollapsed(p => !p)}
-                style={{ position: "absolute", right: -12, top: 72, width: 24, height: 24, borderRadius: "50%", background: "#fff", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", zIndex: 10 }}
+                style={{ 
+                    position: "absolute", 
+                    right: -14, 
+                    top: 32, 
+                    width: 28, 
+                    height: 28, 
+                    borderRadius: "50%", 
+                    background: "#ffffff", 
+                    border: "1px solid #e5e7eb", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    cursor: "pointer", 
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", 
+                    zIndex: 20,
+                    transition: "transform 0.2s"
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "scale(1.1)"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "scale(1)"}
             >
-                {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+                {collapsed ? <ChevronRight size={14} color="#6366f1" /> : <ChevronLeft size={14} color="#6366f1" />}
             </button>
         </aside>
     );

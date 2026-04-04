@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Trash2, Save, FileText, ShoppingCart, Pencil } from "lucide-react";
+import { Trash2, Save, FileText, ShoppingCart, Pencil, Plus as PlusIcon } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -94,7 +94,7 @@ export default function EditSalePage() {
     const addItem = (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
-        if (cart.find(c => c.itemId === item._id)) return;
+        // Removed: if (cart.find(c => c.itemId === item._id)) return; // Allow duplicates
         
         const formatDateStr = (d: any): string => {
             if (!d) return "";
@@ -109,21 +109,35 @@ export default function EditSalePage() {
             itemId: item._id, itemNumber: item.itemNumber, itemName: item.name,
             quantity: 1, price: item.salesAmount, total: item.salesAmount, batch: "", 
             discount: 0,
+            isFOC: false,
             manufacturingDate: formatDateStr(item.manufacturingDate) as string,
             expiryDate: formatDateStr(item.expiryDate) as string,
             _itemRef: item,
         }]);
     };
 
-    const updateQty = (idx: number, qty: number) => {
-        setCart(prev => prev.map((c, i) => i === idx ? { ...c, quantity: qty, total: c.price * qty } : c));
+    const updateItem = (idx: number, updates: Partial<CartItem>) => {
+        setCart(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            const updated = { ...c, ...updates };
+            if (updated.quantity < 1) updated.quantity = 1;
+
+            if (updated.isFOC) {
+                updated.total = 0;
+            } else {
+                updated.total = (updated.price * updated.quantity) - (updated.discount || 0);
+            }
+            return updated;
+        }));
     };
 
     const removeItem = (idx: number) => setCart(prev => prev.filter((_, i) => i !== idx));
 
-    const subtotal = cart.reduce((s, c) => s + c.total, 0);
-    const taxAmt = subtotal * (tax / 100);
-    const total = subtotal + taxAmt;
+    const subtotal = cart.reduce((s, c) => s + (c.isFOC ? 0 : (c.price * c.quantity)), 0);
+    const totalDiscount = cart.reduce((s, c) => s + (c.isFOC ? 0 : (c.discount || 0)), 0);
+    const taxableAmount = subtotal - totalDiscount;
+    const taxAmt = taxableAmount * (tax / 100);
+    const total = taxableAmount + taxAmt;
 
     const handleSave = async () => {
         if (!selCustomer || cart.length === 0) return;
@@ -191,13 +205,14 @@ export default function EditSalePage() {
                                     <th className="th text-center">Exp Date</th>
                                     <th className="th text-right">Unit Price</th>
                                     <th className="th text-center">Qty</th>
+                                    <th className="th text-center">FOC</th>
                                     <th className="th text-right">Total</th>
                                     <th className="th" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {cart.map((c, idx) => (
-                                    <tr key={c.itemId || idx} className="align-top">
+                                    <tr key={`${c.itemId}-${idx}`} className="align-top">
                                         <td className="td text-left">
                                             <div className="font-medium text-gray-800">{c.itemName}</div>
                                             <div className="text-[10px] text-gray-400 font-mono tracking-tighter uppercase">{c.itemNumber}</div>
@@ -217,13 +232,41 @@ export default function EditSalePage() {
                                                 onChange={e => setCart(prev => prev.map((it, i) => i === idx ? { ...it, expiryDate: e.target.value } : it))}
                                                 className="w-32 px-1 py-1 text-[10px] text-right border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500" />
                                         </td>
-                                        <td className="td text-right text-gray-600">{formatCurrency(c.price)}</td>
+                                        <td className="td text-right text-gray-600">{c.isFOC ? "—" : formatCurrency(c.price)}</td>
                                         <td className="td text-center">
-                                            <input type="number" value={c.quantity} onChange={e => updateQty(idx, Number(e.target.value))} className="w-16 px-1 py-1 text-center border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500 mx-auto block" />
+                                            <input type="number" value={c.quantity} onChange={e => updateItem(idx, { quantity: Number(e.target.value) })} className="w-16 px-1 py-1 text-center border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500 mx-auto block" />
                                         </td>
-                                        <td className="td text-right font-semibold text-gray-800">{formatCurrency(c.total)}</td>
                                         <td className="td text-center">
-                                            <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />} onClick={() => removeItem(idx)} />
+                                            <input
+                                                type="checkbox"
+                                                checked={c.isFOC || false}
+                                                onChange={e => updateItem(idx, { isFOC: e.target.checked })}
+                                                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="td text-right font-semibold text-gray-800">{c.isFOC ? <span className="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded text-[10px] uppercase tracking-wider">FREE</span> : formatCurrency(c.total)}</td>
+                                        <td className="td text-center">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    title="Split row"
+                                                    onClick={() => {
+                                                        const fresh = { ...c, quantity: 1 };
+                                                        if (c.quantity > 1) {
+                                                            updateItem(idx, { quantity: c.quantity - 1 });
+                                                        }
+                                                        setCart(prev => {
+                                                            const upd = [...prev];
+                                                            upd.splice(idx + 1, 0, fresh);
+                                                            return upd;
+                                                        });
+                                                    }}
+                                                    className="p-1 text-emerald-500 hover:bg-emerald-50 rounded"
+                                                >
+                                                    <PlusIcon size={14} />
+                                                </button>
+                                                <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-500" />} onClick={() => removeItem(idx)} />
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -234,6 +277,7 @@ export default function EditSalePage() {
 
                 <div className="flex flex-col items-end gap-1 text-sm border-t border-gray-100 pt-4 font-medium">
                     <div className="flex gap-10 text-gray-500"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+                    <div className="flex gap-10 text-amber-600"><span>Discount</span><span>-{formatCurrency(totalDiscount)}</span></div>
                     <div className="flex gap-10 text-gray-500"><span>Tax ({tax}%)</span><span>{formatCurrency(taxAmt)}</span></div>
                     <div className="flex gap-10 text-lg font-bold text-gray-800 border-t border-gray-100 pt-2 mt-2"><span>Grand Total</span><span className="text-emerald-600">{formatCurrency(total)}</span></div>
                 </div>

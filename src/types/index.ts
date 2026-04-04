@@ -110,6 +110,7 @@ export interface ISaleItem {
   quantity: number;
   price: number;
   discount: number;
+  isFOC?: boolean;
   manufacturingDate: string;
   expiryDate: string;
   batch?: string;

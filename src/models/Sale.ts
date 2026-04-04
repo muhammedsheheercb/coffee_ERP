@@ -8,6 +8,7 @@ const SaleItemSchema = new Schema(
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
     discount: { type: Number, default: 0 },
+    isFOC: { type: Boolean, default: false },
     manufacturingDate: { type: Date, required: true },
     expiryDate: { type: Date, required: true },
     batch: { type: String },
@@ -28,6 +29,7 @@ export interface ISaleDocument extends Document {
     quantity: number;
     price: number;
     discount: number;
+    isFOC?: boolean;
     manufacturingDate: Date;
     expiryDate: Date;
     batch?: string;

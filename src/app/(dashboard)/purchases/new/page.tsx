@@ -180,7 +180,7 @@ export default function NewPurchasePage() {
 
             <div className="card p-6 flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 text-right">
+                    <div className="md:col-span-2">
                         <SearchSelect
                             label="Supplier"
                             placeholder="Select supplier..."
@@ -195,7 +195,7 @@ export default function NewPurchasePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="text-sm font-medium text-gray-700 block mb-1.5 text-right">Payment Method <span className="text-red-500">*</span></label>
+                        <label className="text-sm font-medium text-gray-700 block mb-1.5">Payment Method <span className="text-red-500">*</span></label>
                         <div className="flex gap-2">
                             <button 
                               type="button" 
@@ -233,13 +233,13 @@ export default function NewPurchasePage() {
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1.5 text-right">Search & Add Items</label>
+                    <label className="text-sm font-medium text-gray-700 block mb-1.5">Search & Add Items</label>
                     <SearchSelect placeholder="Search items..." options={itemOptions} value={null} onChange={addItem} />
                 </div>
 
                 {cart.length > 0 ? (
                     <div className="table-wrapper border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                        <table className="w-full text-right">
+                        <table className="w-full">
                             <thead className="bg-gray-50/50">
                                 <tr className="border-b border-gray-200">
                                     <th className="th text-left w-[25%]">Item Details</th>
@@ -247,10 +247,10 @@ export default function NewPurchasePage() {
                                     <th className="th">Mfg Date</th>
                                     <th className="th">Exp Date</th>
                                     <th className="th text-center w-32">Quantity</th>
-                                    <th className="th">Purchase Price</th>
-                                    <th className="th">Sales Price</th>
-                                    <th className="th">Stock Value</th>
-                                    <th className="th w-10" />
+                                    <th className="th text-right">Purchase Price</th>
+                                    <th className="th text-right">Sales Price</th>
+                                    <th className="th text-right">Stock Value</th>
+                                    <th className="th w-10 px-0" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -318,7 +318,7 @@ export default function NewPurchasePage() {
                                                 onChange={e => updateItem(idx, { sellingPrice: Number(e.target.value) })}
                                                 className={`w-24 px-2 py-1.5 text-xs text-right border rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block ${!c.sellingPrice ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
                                         </td>
-                                        <td className="td font-bold text-gray-900">{formatCurrency(c.total)}</td>
+                                        <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
                                         <td className="td">
                                             <Button variant="ghost" size="xs" icon={<Trash2 size={15} className="text-red-400 hover:text-red-600" />}
                                                 onClick={() => removeItem(idx)} />
@@ -331,7 +331,7 @@ export default function NewPurchasePage() {
                 ) : (
                     <div className="border-2 border-dashed border-gray-100 rounded-2xl py-16 text-center text-gray-400 bg-gray-50/30">
                         <Plus size={40} className="mx-auto mb-3 opacity-20" />
-                        <p className="text-sm font-medium text-right">Add items from the search bar above</p>
+                        <p className="text-sm font-medium">Add items from the search bar above</p>
                     </div>
                 )}
 

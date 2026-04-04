@@ -73,7 +73,7 @@ export default function NewSalePage() {
     const addItem = useCallback((opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
-        if (cart.find(c => c.itemId === item._id)) return; // already in cart
+        // Removed: if (cart.find(c => c.itemId === item._id)) return; // Support multiple rows for same item
         
         // Helper to format date safely
         const formatDateStr = (d: any): string => {
@@ -94,6 +94,7 @@ export default function NewSalePage() {
             price: item.salesAmount || 0,
             total: item.salesAmount || 0,
             discount: 0,
+            isFOC: false,
             manufacturingDate: formatDateStr(item.manufacturingDate) as string,
             expiryDate: formatDateStr(item.expiryDate) as string,
             batch: "",
@@ -107,16 +108,22 @@ export default function NewSalePage() {
             const updated = { ...c, ...updates };
             // Ensure qty >= 1
             if (updated.quantity < 1) updated.quantity = 1;
-            // Recalculate total: (price * qty) - discount
-            updated.total = (updated.price * updated.quantity) - (updated.discount || 0);
+
+            // FOC Logic: If FOC, total is always 0
+            if (updated.isFOC) {
+                updated.total = 0;
+            } else {
+                // Recalculate total: (price * qty) - discount
+                updated.total = (updated.price * updated.quantity) - (updated.discount || 0);
+            }
             return updated;
         }));
     };
 
     const removeItem = (idx: number) => setCart(prev => prev.filter((_, i) => i !== idx));
 
-    const subtotal = cart.reduce((s, c) => s + (c.price * c.quantity), 0);
-    const totalDiscount = cart.reduce((s, c) => s + (c.discount || 0), 0);
+    const subtotal = cart.reduce((s, c) => s + (c.isFOC ? 0 : (c.price * c.quantity)), 0);
+    const totalDiscount = cart.reduce((s, c) => s + (c.isFOC ? 0 : (c.discount || 0)), 0);
     const taxableAmount = subtotal - totalDiscount;
     const taxAmt = taxableAmount * (tax / 100);
     const total = taxableAmount + taxAmt;
@@ -167,13 +174,13 @@ export default function NewSalePage() {
             head: [["#", "Item", "Batch", "Mfg", "Exp", "Qty", "Price", "Disc", "Total"]],
             body: cart.map((c, i) => [
                 i + 1, 
-                c.itemName, 
+                c.itemName + (c.isFOC ? " (FOC)" : ""), 
                 c.batch || "-", 
                 c.manufacturingDate || "-", 
                 c.expiryDate || "-", 
                 c.quantity, 
-                formatCurrency(c.price), 
-                formatCurrency(c.discount || 0), 
+                c.isFOC ? "0.00" : formatCurrency(c.price), 
+                c.isFOC ? "0.00" : formatCurrency(c.discount || 0), 
                 formatCurrency(c.total)
             ]),
             foot: [
@@ -195,7 +202,7 @@ export default function NewSalePage() {
 
             <div className="card p-6 flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 text-right">
+                    <div className="md:col-span-2">
                         <SearchSelect
                             label="Customer"
                             placeholder="Select customer..."
@@ -248,7 +255,7 @@ export default function NewSalePage() {
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1.5 text-right">Search & Add Items</label>
+                    <label className="text-sm font-medium text-gray-700 block mb-1.5">Search & Add Items</label>
                     <SearchSelect
                         placeholder="Search items..."
                         options={itemOptions}
@@ -259,7 +266,7 @@ export default function NewSalePage() {
 
                 {cart.length > 0 ? (
                     <div className="table-wrapper border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                        <table className="w-full text-right">
+                        <table className="w-full">
                             <thead className="bg-gray-50/50">
                                 <tr className="border-b border-gray-200">
                                     <th className="th text-left w-[20%]">Item Details</th>
@@ -269,13 +276,14 @@ export default function NewSalePage() {
                                     <th className="th text-center w-32">Quantity</th>
                                     <th className="th">Price</th>
                                     <th className="th">Discount</th>
-                                    <th className="th">Total</th>
-                                    <th className="th w-10" />
+                                    <th className="th text-center">FOC</th>
+                                    <th className="th text-right">Total</th>
+                                    <th className="th w-10 px-0" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {cart.map((c, idx) => (
-                                    <tr key={c.itemId} className="align-top">
+                                    <tr key={`${c.itemId}-${idx}`} className="align-top">
                                         <td className="td text-left">
                                             <div className="font-semibold text-gray-900">{c.itemName}</div>
                                             <div className="text-[10px] font-mono text-gray-400 mt-0.5">{c.itemNumber}</div>
@@ -328,21 +336,52 @@ export default function NewSalePage() {
                                             </div>
                                             <div className="text-[10px] text-center text-gray-400 mt-1">Stock: {c._itemRef.quantity}</div>
                                         </td>
-                                        <td className="td font-medium text-gray-700">{formatCurrency(c.price)}</td>
+                                        <td className="td text-right font-medium text-gray-700">{c.isFOC ? "—" : formatCurrency(c.price)}</td>
                                         <td className="td">
                                             <input
                                                 type="number"
                                                 step="0.001"
                                                 placeholder="0.000"
+                                                disabled={c.isFOC}
                                                 value={c.discount || ''}
                                                 onChange={e => updateItem(idx, { discount: Number(e.target.value) })}
-                                                className="w-20 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                                className={`w-20 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${c.isFOC ? 'bg-gray-50 opacity-50 cursor-not-allowed' : ''}`}
                                             />
                                         </td>
-                                        <td className="td font-bold text-gray-900">{formatCurrency(c.total)}</td>
+                                        <td className="td text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={c.isFOC || false}
+                                                onChange={e => updateItem(idx, { isFOC: e.target.checked })}
+                                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="td text-right font-bold text-gray-900">{c.isFOC ? <span className="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded text-[10px] uppercase tracking-wider">FREE</span> : formatCurrency(c.total)}</td>
                                         <td className="td">
-                                            <Button variant="ghost" size="xs" icon={<Trash2 size={15} className="text-red-400 hover:text-red-600" />}
-                                                onClick={() => removeItem(idx)} />
+                                            <div className="flex gap-1">
+                                                <button
+                                                    type="button"
+                                                    title="Split this row"
+                                                    onClick={() => {
+                                                        const newItem = { ...c, quantity: 1 };
+                                                        // Update current row quantity (if > 1)
+                                                        if (c.quantity > 1) {
+                                                            updateItem(idx, { quantity: c.quantity - 1 });
+                                                        }
+                                                        // Add new item to cart
+                                                        setCart(prev => {
+                                                            const newCart = [...prev];
+                                                            newCart.splice(idx + 1, 0, newItem);
+                                                            return newCart;
+                                                        });
+                                                    }}
+                                                    className="p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                >
+                                                    <PlusIcon size={14} />
+                                                </button>
+                                                <Button variant="ghost" size="xs" icon={<Trash2 size={15} className="text-red-400 hover:text-red-600" />}
+                                                    onClick={() => removeItem(idx)} />
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

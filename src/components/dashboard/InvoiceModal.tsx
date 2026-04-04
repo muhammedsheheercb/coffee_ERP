@@ -12,6 +12,7 @@ interface InvoiceItem {
     quantity: number;
     price: number;
     total: number;
+    isFOC?: boolean;
 }
 
 interface InvoiceData {
@@ -57,9 +58,9 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
             head: [["#", "Item", "Qty", "Price", data.type === "Purchase" ? "Stock Value" : "Total"]],
             body: data.items.map((item, i) => [
                 i + 1,
-                item.itemName,
+                item.itemName + (item.isFOC ? " (FOC)" : ""),
                 item.quantity,
-                formatCurrency(item.price),
+                item.isFOC ? "0.00" : formatCurrency(item.price),
                 formatCurrency(item.total)
             ]),
             foot: [
@@ -141,8 +142,14 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                                             <p className="text-[10px] font-mono text-gray-400">{item.itemNumber}</p>
                                         </td>
                                         <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
-                                        <td className="px-4 py-3 text-right text-gray-600">{formatCurrency(item.price)}</td>
-                                        <td className="px-4 py-3 text-right font-semibold text-gray-800">{formatCurrency(item.total)}</td>
+                                        <td className="px-4 py-3 text-right text-gray-600">{item.isFOC ? "—" : formatCurrency(item.price)}</td>
+                                        <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                                            {item.isFOC ? (
+                                                <span className="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded text-[10px] uppercase tracking-wider">FREE</span>
+                                            ) : (
+                                                formatCurrency(item.total)
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
