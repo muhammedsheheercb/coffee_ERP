@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Supplier from "@/models/Supplier";
+import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -14,7 +15,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     await connectDB();
     const { id } = await params;
-    const supplier = await Supplier.findById(id).populate("itemsProvided").lean();
+    const supplier = await Supplier.findById(id)
+        .populate("itemsProvided")
+        .populate("createdBy", "name")
+        .populate("updatedBy", "name")
+        .lean();
     if (!supplier) return NextResponse.json({ success: false, error: "Supplier not found" }, { status: 404 });
 
     const history = supplier.balanceHistory || [];
@@ -83,6 +88,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         note: note || "Manual adjustment"
       });
 
+      supplier.updatedBy = session.user.id as any;
       await supplier.save();
       return NextResponse.json({ success: true, data: supplier });
     }
@@ -108,6 +114,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     Object.assign(supplier, updates);
+    supplier.updatedBy = session.user.id as any;
     await supplier.save();
 
     return NextResponse.json({ success: true, data: supplier });

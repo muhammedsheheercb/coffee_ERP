@@ -138,14 +138,15 @@ export default function SuppliersPage() {
                             <th className="th text-center">Items Provided</th>
                             <th className="th text-right">Opening Balance <SortBtn col="openingBalance" /></th>
                             <th className="th">Created <SortBtn col="createdAt" /></th>
+                            {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={6} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 7 : 6} className="py-16 text-center"><Spinner /></td></tr>
                         ) : suppliers.length === 0 ? (
-                            <tr><td colSpan={6} className="py-16 text-center text-gray-400 text-sm">No suppliers found</td></tr>
+                            <tr><td colSpan={isAdmin ? 7 : 6} className="py-16 text-center text-gray-400 text-sm">No suppliers found</td></tr>
                         ) : suppliers.map((s: ISupplier) => (
                             <tr key={s._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{s.supplierNumber}</td>
@@ -171,6 +172,16 @@ export default function SuppliersPage() {
                                     </div>
                                 </td>
                                 <td className="td text-gray-400 text-xs">{formatDate(s.createdAt)}</td>
+                                {isAdmin && (
+                                    <td className="td text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium text-gray-800">{s.createdBy?.name || "Admin"}</span>
+                                            {s.updatedBy && s.updatedBy.name !== s.createdBy?.name && (
+                                                <span className="text-[9px] text-gray-400 italic">Edit: {s.updatedBy.name}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {canEdit && (

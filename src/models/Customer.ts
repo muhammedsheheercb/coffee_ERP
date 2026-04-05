@@ -15,6 +15,8 @@ export interface ICustomerDocument extends Document {
   }[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: mongoose.Types.ObjectId;
+  updatedBy?: mongoose.Types.ObjectId;
 }
 
 const CustomerSchema = new Schema<ICustomerDocument>(
@@ -52,6 +54,14 @@ const CustomerSchema = new Schema<ICustomerDocument>(
         note: { type: String },
       },
     ],
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true }
 );

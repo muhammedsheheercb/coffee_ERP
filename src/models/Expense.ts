@@ -11,6 +11,8 @@ export interface IExpenseDocument extends Document {
   paymentType: "cash" | "credit" | "debit";
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: mongoose.Types.ObjectId;
+  updatedBy?: mongoose.Types.ObjectId;
 }
 
 const ExpenseSchema = new Schema<IExpenseDocument>(
@@ -32,12 +34,18 @@ const ExpenseSchema = new Schema<IExpenseDocument>(
       enum: ["cash", "credit", "debit"],
       required: true,
     },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
 ExpenseSchema.index({ date: -1 });
 ExpenseSchema.index({ category: 1 });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).Expense;
+}
 
 const Expense: Model<IExpenseDocument> =
   mongoose.models.Expense ??

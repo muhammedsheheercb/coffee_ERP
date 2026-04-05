@@ -6,6 +6,7 @@ import {
     Trash2, Eye, Trash
 } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
+import Pagination from "@/components/ui/Pagination";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -20,6 +21,9 @@ export default function DamagedItemsPage() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [items, setItems] = useState<IItem[]>([]);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [formData, setFormData] = useState({
         itemId: "",
         itemNumber: "",
@@ -34,13 +38,16 @@ export default function DamagedItemsPage() {
     useEffect(() => {
         fetchDamagedItems();
         fetchItems();
-    }, []);
+    }, [page]);
 
     const fetchDamagedItems = async () => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/damaged-items");
+            const res = await fetch(`/api/damaged-items?page=${page}&limit=10`);
             const data = await res.json();
-            setDamagedItems(Array.isArray(data) ? data : []);
+            setDamagedItems(data.data || []);
+            setTotal(data.total || 0);
+            setTotalPages(data.totalPages || 0);
         } catch (error) {
             toast.error("Failed to fetch damaged items");
         } finally {
@@ -160,6 +167,7 @@ export default function DamagedItemsPage() {
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 border-r border-gray-200 text-center">Quantity</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 border-r border-gray-200 text-center">Reason</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 border-r border-gray-200 text-center">Date</th>
+                                {isAdmin && <th className="px-6 py-4 text-sm font-semibold text-gray-900 border-r border-gray-200 text-center">Created By</th>}
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -179,6 +187,16 @@ export default function DamagedItemsPage() {
                                     <td className="px-6 py-4 text-center border-r border-gray-200 text-gray-500">
                                         {new Date(item.date).toLocaleDateString()}
                                     </td>
+                                    {isAdmin && (
+                                        <td className="px-6 py-4 text-center border-r border-gray-200">
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-[10px] font-medium text-gray-800">{item.createdBy?.name || "Admin"}</span>
+                                                {item.updatedBy && item.updatedBy.name !== item.createdBy?.name && (
+                                                    <span className="text-[9px] text-gray-400 italic">Edit: {item.updatedBy.name}</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center gap-2">
                                             {canEdit && (
@@ -217,6 +235,15 @@ export default function DamagedItemsPage() {
                     {damagedItems.length === 0 && !loading && (
                         <div className="p-12 text-center text-gray-500">No damaged items recorded.</div>
                     )}
+                    <div className="border-t border-gray-100 px-2 mt-4">
+                        <Pagination 
+                            page={page} 
+                            totalPages={totalPages} 
+                            total={total} 
+                            limit={10} 
+                            onPageChange={setPage} 
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -229,7 +256,7 @@ export default function DamagedItemsPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Select Item</label>
                         <Select
-                            options={items.map(i => ({ value: i._id, label: `${i.itemNumber} - ${i.name}`, data: i }))}
+                            options={items.filter(i => i.quantity > 0).map(i => ({ value: i._id, label: `${i.itemNumber} - ${i.name} (Qty: ${i.quantity})`, data: i }))}
                             value={formData.itemId ? { value: formData.itemId, label: `${formData.itemNumber} - ${formData.itemName}`, data: items.find(i => i._id === formData.itemId) } : null}
                             onChange={(opt: any) => handleItemSelect(opt.data)}
                             placeholder="Search item..."

@@ -15,6 +15,8 @@ export interface ISupplierDocument extends Document {
   }[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: mongoose.Types.ObjectId;
+  updatedBy?: mongoose.Types.ObjectId;
 }
 
 const SupplierSchema = new Schema<ISupplierDocument>(
@@ -53,11 +55,17 @@ const SupplierSchema = new Schema<ISupplierDocument>(
         note: { type: String },
       },
     ],
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
 SupplierSchema.index({ name: "text", supplierNumber: "text" });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).Supplier;
+}
 
 const Supplier: Model<ISupplierDocument> =
   mongoose.models.Supplier ??

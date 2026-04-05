@@ -8,6 +8,8 @@ export interface IDamagedItem extends Document {
     reason: string;
     date: Date;
     disposed: boolean;
+    createdBy?: mongoose.Types.ObjectId;
+    updatedBy?: mongoose.Types.ObjectId;
 }
 
 const DamagedItemSchema = new Schema<IDamagedItem>({
@@ -18,6 +20,12 @@ const DamagedItemSchema = new Schema<IDamagedItem>({
     reason: { type: String, required: true },
     date: { type: Date, default: Date.now },
     disposed: { type: Boolean, default: false },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
 }, { timestamps: true });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).DamagedItem;
+}
 
 export default mongoose.models.DamagedItem || mongoose.model<IDamagedItem>("DamagedItem", DamagedItemSchema);

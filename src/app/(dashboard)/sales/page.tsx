@@ -155,14 +155,15 @@ export default function SalesPage() {
                             <th className="th text-center">Items</th>
                             <th className="th text-right">Total</th>
                             <th className="th text-center">Payment</th>
+                            {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center"><Spinner /></td></tr>
                         ) : sales.length === 0 ? (
-                            <tr><td colSpan={7} className="py-16 text-center text-gray-400 text-sm">No sales found</td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center text-gray-400 text-sm">No sales found</td></tr>
                         ) : sales.map((s: ISale) => (
                             <tr key={s._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{s.saleNumber}</td>
@@ -181,6 +182,16 @@ export default function SalesPage() {
                                         variant={s.paymentType === "cash" ? "success" : s.paymentType === "credit" ? "warning" : "info"}
                                     />
                                 </td>
+                                {isAdmin && (
+                                    <td className="td text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium text-gray-800">{s.createdBy?.name || "Admin"}</span>
+                                            {s.updatedBy && s.updatedBy.name !== s.createdBy?.name && (
+                                                <span className="text-[9px] text-gray-400 italic font-light">Edit: {s.updatedBy.name}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewSale(s)} />

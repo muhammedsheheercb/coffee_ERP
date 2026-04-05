@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Expense from "@/models/Expense";
+import User from "@/models/User";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { IApiResponse, IPaginatedResponse } from "@/types";
 
 export async function GET(req: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
         await connectDB();
         const { searchParams } = new URL(req.url);
         const search = searchParams.get("search") || "";
@@ -43,7 +49,12 @@ export async function GET(req: NextRequest) {
         }
 
         const [expenses, total, totalStats] = await Promise.all([
-            Expense.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Expense.find(query)
+                .populate("createdBy", "name")
+                .populate("updatedBy", "name")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
             Expense.countDocuments(query),
             Expense.aggregate([
                 { $match: query },
@@ -70,6 +81,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
         await connectDB();
         const body = await req.json();
 
@@ -80,6 +94,8 @@ export async function POST(req: NextRequest) {
         const expense = await Expense.create({
             ...body,
             expenseNumber,
+            createdBy: session.user.id,
+            updatedBy: session.user.id,
         });
 
         return NextResponse.json({ success: true, data: expense }, { status: 201 });

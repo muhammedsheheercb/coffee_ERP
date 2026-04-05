@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Customer from "@/models/Customer";
+import User from "@/models/User";
 import { generateUniqueNumber } from "@/lib/utils";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -31,6 +32,8 @@ export async function GET(req: NextRequest) {
 
     const [customers, total] = await Promise.all([
       Customer.find(query)
+        .populate("createdBy", "name")
+        .populate("updatedBy", "name")
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
@@ -68,6 +71,8 @@ export async function POST(req: NextRequest) {
         customerNumber,
         openingBalance,
         creditBalance: openingBalance,
+        createdBy: session.user.id,
+        updatedBy: session.user.id,
         balanceHistory: openingBalance !== 0 ? [{
             date: new Date(),
             amount: openingBalance,

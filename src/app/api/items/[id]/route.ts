@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Item from "@/models/Item";
+import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -14,7 +15,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     await connectDB();
     const { id } = await params;
-    const item = await Item.findById(id).lean();
+    const item = await Item.findById(id)
+      .populate("createdBy", "name")
+      .populate("updatedBy", "name")
+      .lean();
     if (!item) return NextResponse.json({ success: false, error: "Item not found" }, { status: 404 });
 
     return NextResponse.json({ success: true, data: item });
@@ -33,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     await connectDB();
     const { id } = await params;
     const body = await req.json();
+    body.updatedBy = session.user.id;
 
     const item = await Item.findByIdAndUpdate(id, body, { new: true, runValidators: true }).lean();
     if (!item) return NextResponse.json({ success: false, error: "Item not found" }, { status: 404 });

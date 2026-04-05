@@ -151,14 +151,15 @@ export default function PurchasesPage() {
                             <th className="th text-center">Items</th>
                             <th className="th text-right">Stock Value</th>
                             <th className="th text-center">Payment</th>
+                            {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center"><Spinner /></td></tr>
                         ) : purchases.length === 0 ? (
-                            <tr><td colSpan={7} className="py-16 text-center text-gray-400 text-sm">No purchases found</td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center text-gray-400 text-sm">No purchases found</td></tr>
                         ) : purchases.map((p: IPurchase) => (
                             <tr key={p._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{p.purchaseNumber}</td>
@@ -182,6 +183,16 @@ export default function PurchasesPage() {
                                         variant={p.paymentType === "cash" ? "success" : p.paymentType === "credit" ? "warning" : "info"}
                                     />
                                 </td>
+                                {isAdmin && (
+                                    <td className="td text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium text-gray-800">{p.createdBy?.name || "Admin"}</span>
+                                            {p.updatedBy && p.updatedBy.name !== p.createdBy?.name && (
+                                                <span className="text-[9px] text-gray-400 italic">Edit: {p.updatedBy.name}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewPurchase(p)} />

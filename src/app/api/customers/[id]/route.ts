@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Customer from "@/models/Customer";
+import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -14,7 +15,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     await connectDB();
     const { id } = await params;
-    const customer = await Customer.findById(id).lean();
+    const customer = await Customer.findById(id)
+      .populate("createdBy", "name")
+      .populate("updatedBy", "name")
+      .lean();
     if (!customer) return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
 
     // For safety, initialize fields if they missing
@@ -80,6 +84,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         note: note || "Manual Entry"
       });
 
+      customer.updatedBy = session.user.id as any;
       await customer.save();
       return NextResponse.json({ success: true, data: customer });
     }
@@ -105,6 +110,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     Object.assign(customer, updates);
+    customer.updatedBy = session.user.id as any;
     await customer.save();
 
     return NextResponse.json({ success: true, data: customer });

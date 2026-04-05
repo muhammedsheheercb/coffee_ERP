@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Purchase from "@/models/Purchase";
+import User from "@/models/User";
 import Item from "@/models/Item";
 import Supplier from "@/models/Supplier";
 import { generateUniqueNumber } from "@/lib/utils";
@@ -55,7 +56,13 @@ export async function GET(req: NextRequest) {
     }
 
     const [purchases, total, totalAmountResult] = await Promise.all([
-      Purchase.find(query).sort({ [sortBy]: sortOrder }).skip(skip).limit(limit).lean(),
+      Purchase.find(query)
+        .populate("createdBy", "name")
+        .populate("updatedBy", "name")
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       Purchase.countDocuments(query),
       Purchase.aggregate([{ $match: query }, { $group: { _id: null, total: { $sum: "$total" } } }]),
     ]);
@@ -90,7 +97,12 @@ export async function POST(req: NextRequest) {
     const purchaseNumber = generateUniqueNumber("PUR");
 
     // 1 — create purchase
-    const [purchase] = await Purchase.create([{ ...body, purchaseNumber }], { session: dbSession });
+    const [purchase] = await Purchase.create([{ 
+        ...body, 
+        purchaseNumber,
+        createdBy: session.user.id,
+        updatedBy: session.user.id
+    }], { session: dbSession });
     if (!purchase) throw new Error("Failed to create purchase record");
 
     // 2 — increase item quantities and update dates

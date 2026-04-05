@@ -16,9 +16,14 @@ import { toast } from "react-hot-toast";
 import { formatCurrency } from "@/lib/utils";
 import { ISale, ISaleItem, ICustomer } from "@/types";
 
+import Pagination from "@/components/ui/Pagination";
+
 export default function SalesReturnsPage() {
     const [returns, setReturns] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [modalOpen, setModalOpen] = useState(false);
     const [confirmModalOpen, setConfirmModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -38,13 +43,16 @@ export default function SalesReturnsPage() {
     useEffect(() => {
         fetchReturns();
         fetchSales();
-    }, []);
+    }, [page]);
 
     const fetchReturns = async () => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/sales-returns");
+            const res = await fetch(`/api/sales-returns?page=${page}&limit=10`);
             const data = await res.json();
-            setReturns(data);
+            setReturns(data.data || []);
+            setTotal(data.total || 0);
+            setTotalPages(data.totalPages || 0);
         } catch (error) {
             toast.error("Failed to fetch returns");
         } finally {
@@ -201,6 +209,7 @@ export default function SalesReturnsPage() {
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Customer</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Total</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Date</th>
+                                {isAdmin && <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Created By</th>}
                                 <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right pr-6">Actions</th>
                             </tr>
                         </thead>
@@ -212,6 +221,16 @@ export default function SalesReturnsPage() {
                                     <td className="px-6 py-4 text-gray-900 font-medium">{ret.customerName}</td>
                                     <td className="px-6 py-4 font-bold text-red-600">{formatCurrency(ret.totalAmount)}</td>
                                     <td className="px-6 py-4 text-gray-500">{new Date(ret.date).toLocaleDateString()}</td>
+                                    {isAdmin && (
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] font-medium text-gray-800">{ret.createdBy?.name || "Admin"}</span>
+                                                {ret.updatedBy && ret.updatedBy.name !== ret.createdBy?.name && (
+                                                    <span className="text-[9px] text-gray-400 italic">Edit: {ret.updatedBy.name}</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 text-right pr-6">
                                         <div className="flex justify-end gap-2">
                                             {canEdit && (
@@ -233,6 +252,15 @@ export default function SalesReturnsPage() {
                     {returns.length === 0 && !loading && (
                         <div className="p-12 text-center text-gray-500">No returns found.</div>
                     )}
+                    <div className="border-t border-gray-100 px-2 mt-4">
+                        <Pagination 
+                            page={page} 
+                            totalPages={totalPages} 
+                            total={total} 
+                            limit={10} 
+                            onPageChange={setPage} 
+                        />
+                    </div>
                 </div>
 
                 <ConfirmModal

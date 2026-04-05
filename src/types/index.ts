@@ -54,6 +54,8 @@ export interface IItem {
   batches?: IBatch[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface IItemForm {
@@ -85,6 +87,8 @@ export interface ICustomer {
   balanceHistory?: IBalanceHistory[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface ICustomerForm {
@@ -106,6 +110,8 @@ export interface ISupplier {
   balanceHistory?: IBalanceHistory[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface ISupplierForm {
@@ -144,6 +150,8 @@ export interface ISale {
   date: Date;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface ISaleForm {
@@ -186,6 +194,8 @@ export interface IPurchase {
   date: Date;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface IPurchaseForm {
@@ -213,6 +223,8 @@ export interface IExpense {
   paymentType: PaymentType;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: { _id: string; name: string };
+  updatedBy?: { _id: string; name: string };
 }
 
 export interface IExpenseForm {

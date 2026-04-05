@@ -40,6 +40,8 @@ export interface IPurchaseDocument extends Document {
   date: Date;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: mongoose.Types.ObjectId;
+  updatedBy?: mongoose.Types.ObjectId;
 }
 
 const PurchaseSchema = new Schema<IPurchaseDocument>(
@@ -67,12 +69,18 @@ const PurchaseSchema = new Schema<IPurchaseDocument>(
       required: true,
     },
     date: { type: Date, default: Date.now },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
 PurchaseSchema.index({ date: -1 });
 PurchaseSchema.index({ supplierId: 1 });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).Purchase;
+}
 
 const Purchase: Model<IPurchaseDocument> =
   mongoose.models.Purchase ??

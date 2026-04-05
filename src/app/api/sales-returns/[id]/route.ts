@@ -3,7 +3,10 @@ import { connectDB } from "@/lib/mongodb";
 import SaleReturn from "@/models/SaleReturn";
 import Item from "@/models/Item";
 import Customer from "@/models/Customer";
+import User from "@/models/User";
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,6 +15,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   dbSession.startTransaction();
 
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     await connectDB();
     const { id } = await params;
     
@@ -68,6 +74,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
   dbSession.startTransaction();
 
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     await connectDB();
     const { id } = await params;
     const body = await req.json();
@@ -103,7 +112,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }, { session: dbSession });
 
     // 3 — Update the record
-    const updated = await SaleReturn.findByIdAndUpdate(id, body, { session: dbSession, new: true });
+    const updated = await SaleReturn.findByIdAndUpdate(id, {
+      ...body,
+      updatedBy: session.user.id
+    }, { session: dbSession, new: true });
 
     await dbSession.commitTransaction();
     return NextResponse.json(updated);

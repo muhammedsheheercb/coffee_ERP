@@ -132,16 +132,16 @@ export default function ExpensesPage() {
                             <th className="th">Title</th>
                             <th className="th text-center">Category</th>
                             <th className="th">Date</th>
-                            <th className="th text-right">Amount</th>
                             <th className="th text-center">Payment</th>
+                            {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center"><Spinner /></td></tr>
                         ) : expenses.length === 0 ? (
-                            <tr><td colSpan={7} className="py-16 text-center text-gray-400 text-sm">No expenses found</td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center text-gray-400 text-sm">No expenses found</td></tr>
                         ) : expenses.map((e: IExpense) => (
                             <tr key={e._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{e.expenseNumber}</td>
@@ -162,6 +162,16 @@ export default function ExpensesPage() {
                                         variant={e.paymentType === "cash" ? "success" : e.paymentType === "credit" ? "warning" : "info"}
                                     />
                                 </td>
+                                {isAdmin && (
+                                    <td className="td text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium text-gray-800">{e.createdBy?.name || "Admin"}</span>
+                                            {e.updatedBy && e.updatedBy.name !== e.createdBy?.name && (
+                                                <span className="text-[9px] text-gray-400 italic">Edit: {e.updatedBy.name}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                                 <td className="td text-right flex justify-end gap-1">
                                     {canEdit && (
                                         <Link href={`/expenses/edit/${e._id}`}>

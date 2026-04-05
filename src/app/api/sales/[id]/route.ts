@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Sale from "@/models/Sale";
+import User from "@/models/User";
 import Item from "@/models/Item";
 import Customer from "@/models/Customer";
 import { getServerSession } from "next-auth";
@@ -16,7 +17,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     await connectDB();
     const { id } = await params;
-    const sale = await Sale.findById(id).lean();
+    const sale = await Sale.findById(id)
+      .populate("createdBy", "name")
+      .populate("updatedBy", "name")
+      .lean();
     if (!sale) return NextResponse.json({ success: false, error: "Sale not found" }, { status: 404 });
 
     return NextResponse.json({ success: true, data: sale });
@@ -45,6 +49,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     // Update record
+    body.updatedBy = session.user.id;
     const sale = await Sale.findByIdAndUpdate(id, body, { new: true, runValidators: true });
 
     // Apply new inventory impact (decrease stock for the updated sale)

@@ -49,35 +49,35 @@ export default function Sidebar() {
     const w = collapsed ? 72 : 260;
 
     return (
-        <aside style={{ 
-            position: "relative", 
-            width: w, 
-            minWidth: w, 
-            height: "100vh", 
-            background: "#ffffff", 
-            borderRight: "1px solid #f3f4f6", 
-            display: "flex", 
-            flexDirection: "column", 
+        <aside style={{
+            position: "relative",
+            width: w,
+            minWidth: w,
+            height: "100vh",
+            background: "#ffffff",
+            borderRight: "1px solid #f3f4f6",
+            display: "flex",
+            flexDirection: "column",
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             boxShadow: "4px 0 24px rgba(0,0,0,0.02)"
         }}>
             {/* logo */}
-            <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 12, 
-                padding: collapsed ? "24px 0" : "24px 20px", 
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: collapsed ? "24px 0" : "24px 20px",
                 justifyContent: collapsed ? "center" : "flex-start",
                 marginBottom: 8
             }}>
-                <div style={{ 
-                    width: 36, 
-                    height: 36, 
-                    borderRadius: 10, 
-                    background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
+                <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     flexShrink: 0,
                     boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)"
                 }}>
@@ -85,19 +85,20 @@ export default function Sidebar() {
                 </div>
                 {!collapsed && (
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontWeight: 800, fontSize: 16, color: "#111827", letterSpacing: "-0.02em" }}>Coffee ERP</span>
+                        <span style={{ fontWeight: 800, fontSize: 16, color: "#111827", letterSpacing: "-0.02em" }}>CAFE DIRECT
+                        </span>
                         <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Management</span>
                     </div>
                 )}
             </div>
 
             {/* nav */}
-            <nav style={{ 
-                flex: 1, 
-                padding: "8px 12px", 
-                display: "flex", 
-                flexDirection: "column", 
-                gap: 4, 
+            <nav style={{
+                flex: 1,
+                padding: "8px 12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
                 overflowY: "auto",
                 scrollbarWidth: "none"
             }}>
@@ -105,25 +106,25 @@ export default function Sidebar() {
                     const active = pathname === href || (href !== "/" && pathname.startsWith(href));
                     return (
                         <Link key={href} href={href} title={collapsed ? label : undefined}
-                            style={{ 
-                                display: "flex", 
-                                alignItems: "center", 
-                                gap: 12, 
-                                padding: collapsed ? "12px 0" : "12px 14px", 
-                                borderRadius: 12, 
-                                fontSize: 14, 
-                                fontWeight: active ? 600 : 500, 
-                                textDecoration: "none", 
-                                justifyContent: collapsed ? "center" : "flex-start", 
-                                background: active ? "#f5f3ff" : "transparent", 
-                                color: active ? "#6366f1" : "#64748b", 
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: collapsed ? "12px 0" : "12px 14px",
+                                borderRadius: 12,
+                                fontSize: 14,
+                                fontWeight: active ? 600 : 500,
+                                textDecoration: "none",
+                                justifyContent: collapsed ? "center" : "flex-start",
+                                background: active ? "#f5f3ff" : "transparent",
+                                color: active ? "#6366f1" : "#64748b",
                                 transition: "all 0.2s ease",
                                 border: active ? "1px solid #e0e7ff" : "1px solid transparent"
                             }}
                             onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                             onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                         >
-                            <Icon size={20} style={{ 
+                            <Icon size={20} style={{
                                 flexShrink: 0,
                                 color: active ? "#6366f1" : "#94a3b8"
                             }} />
@@ -137,19 +138,19 @@ export default function Sidebar() {
             <div className="logout-container" style={{ padding: "16px 12px 24px", borderTop: "1px solid #f3f4f6" }}>
                 <button onClick={() => signOut({ callbackUrl: "/login" })}
                     title={collapsed ? "Logout" : undefined}
-                    style={{ 
-                        width: "100%", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: 12, 
-                        padding: collapsed ? "12px 0" : "12px 14px", 
-                        borderRadius: 12, 
-                        fontSize: 14, 
-                        fontWeight: 500, 
-                        border: "none", 
-                        background: "transparent", 
-                        color: "#ef4444", 
-                        cursor: "pointer", 
+                    style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: collapsed ? "12px 0" : "12px 14px",
+                        borderRadius: 12,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        border: "none",
+                        background: "transparent",
+                        color: "#ef4444",
+                        cursor: "pointer",
                         justifyContent: collapsed ? "center" : "flex-start",
                         transition: "all 0.2s"
                     }}
@@ -163,20 +164,20 @@ export default function Sidebar() {
 
             {/* collapse toggle */}
             <button onClick={() => setCollapsed(p => !p)}
-                style={{ 
-                    position: "absolute", 
-                    right: -14, 
-                    top: 32, 
-                    width: 28, 
-                    height: 28, 
-                    borderRadius: "50%", 
-                    background: "#ffffff", 
-                    border: "1px solid #e5e7eb", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    cursor: "pointer", 
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", 
+                style={{
+                    position: "absolute",
+                    right: -14,
+                    top: 32,
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "#ffffff",
+                    border: "1px solid #e5e7eb",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     zIndex: 20,
                     transition: "transform 0.2s"
                 }}

@@ -126,14 +126,15 @@ export default function ItemsPage() {
                             <th className="th text-right">Sales Price <SortBtn col="salesAmount" /></th>
                             <th className="th text-right">Mfg Date <SortBtn col="manufacturingDate" /></th>
                             <th className="th text-right">Exp Date <SortBtn col="expiryDate" /></th>
+                            {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={8} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 9 : 8} className="py-16 text-center"><Spinner /></td></tr>
                         ) : items.length === 0 ? (
-                            <tr><td colSpan={8} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
+                            <tr><td colSpan={isAdmin ? 9 : 8} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
                         ) : items.map((item: IItem) => (
                             <React.Fragment key={item._id}>
                                 <tr className="tr-hover">
@@ -149,6 +150,16 @@ export default function ItemsPage() {
                                     <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
                                     <td className="td text-right text-[10px] text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}</td>
                                     <td className="td text-right text-[10px] text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "-"}</td>
+                                    {isAdmin && (
+                                        <td className="td text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] font-medium text-gray-800">{item.createdBy?.name || "Admin"}</span>
+                                                {item.updatedBy && item.updatedBy.name !== item.createdBy?.name && (
+                                                    <span className="text-[9px] text-gray-400 italic">Edit: {item.updatedBy.name}</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
                                     <td className="td text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button
@@ -176,7 +187,7 @@ export default function ItemsPage() {
                                 </tr>
                                 {expandedItemId === item._id && (
                                     <tr className="bg-amber-50/30">
-                                        <td colSpan={8} className="p-4 border-t border-amber-100">
+                                        <td colSpan={isAdmin ? 9 : 8} className="p-4 border-t border-amber-100">
                                             <div className="text-xs font-bold text-amber-800 mb-2 px-1 flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                                                 ITEM BATCH HISTORY

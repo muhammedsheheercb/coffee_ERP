@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Purchase from "@/models/Purchase";
+import User from "@/models/User";
 import Item from "@/models/Item";
 import Supplier from "@/models/Supplier";
 import { getServerSession } from "next-auth";
@@ -16,7 +17,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     await connectDB();
     const { id } = await params;
-    const purchase = await Purchase.findById(id).lean();
+    const purchase = await Purchase.findById(id)
+      .populate("createdBy", "name")
+      .populate("updatedBy", "name")
+      .lean();
     if (!purchase) return NextResponse.json({ success: false, error: "Purchase not found" }, { status: 404 });
 
     return NextResponse.json({ success: true, data: purchase });
@@ -45,6 +49,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     // Update record
+    body.updatedBy = session.user.id;
     const purchase = await Purchase.findByIdAndUpdate(id, body, { new: true, runValidators: true });
 
     // Apply new inventory impact and update item details

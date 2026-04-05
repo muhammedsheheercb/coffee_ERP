@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Sale from "@/models/Sale";
+import User from "@/models/User";
 import Item from "@/models/Item";
 import Customer from "@/models/Customer";
 import { generateUniqueNumber } from "@/lib/utils";
@@ -55,7 +56,13 @@ export async function GET(req: NextRequest) {
     }
 
     const [sales, total, totalAmountResult] = await Promise.all([
-      Sale.find(query).sort({ [sortBy]: sortOrder }).skip(skip).limit(limit).lean(),
+      Sale.find(query)
+        .populate("createdBy", "name")
+        .populate("updatedBy", "name")
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       Sale.countDocuments(query),
       Sale.aggregate([{ $match: query }, { $group: { _id: null, total: { $sum: "$total" } } }]),
     ]);
@@ -90,7 +97,12 @@ export async function POST(req: NextRequest) {
     const saleNumber = generateUniqueNumber("SALE");
 
     // 1 — create sale
-    const [sale] = await Sale.create([{ ...body, saleNumber }], { session: dbSession });
+    const [sale] = await Sale.create([{ 
+        ...body, 
+        saleNumber,
+        createdBy: session.user.id,
+        updatedBy: session.user.id
+    }], { session: dbSession });
 
     // 2 — decrease item quantities and batches (manual or FIFO)
     for (const saleItem of body.items) {

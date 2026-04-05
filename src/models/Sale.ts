@@ -42,6 +42,8 @@ export interface ISaleDocument extends Document {
   date: Date;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: mongoose.Types.ObjectId;
+  updatedBy?: mongoose.Types.ObjectId;
 }
 
 const SaleSchema = new Schema<ISaleDocument>(
@@ -69,6 +71,8 @@ const SaleSchema = new Schema<ISaleDocument>(
       required: true,
     },
     date: { type: Date, default: Date.now },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
@@ -76,6 +80,10 @@ const SaleSchema = new Schema<ISaleDocument>(
 SaleSchema.index({ date: -1 });
 SaleSchema.index({ customerId: 1 });
 SaleSchema.index({ customerId: 1, "items.itemId": 1, date: -1 });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).Sale;
+}
 
 const Sale: Model<ISaleDocument> =
   mongoose.models.Sale ?? mongoose.model<ISaleDocument>("Sale", SaleSchema);
