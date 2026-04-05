@@ -104,6 +104,7 @@ export interface ISupplier {
   _id: string;
   supplierNumber: string;
   name: string;
+  mobile?: string;
   itemsProvided: string[];
   openingBalance: number;
   creditBalance: number;
@@ -117,6 +118,7 @@ export interface ISupplier {
 export interface ISupplierForm {
   supplierNumber: string;
   name: string;
+  mobile?: string;
   itemsProvided?: string[];
   openingBalance?: number;
 }
@@ -254,6 +256,10 @@ export interface IKpiData {
   totalSuppliers: number;
   totalReceivable: number;
   totalPayable: number;
+  cashSales?: number;
+  bankSales?: number;
+  cashPurchases?: number;
+  bankPurchases?: number;
 }
 
 export interface IChartData {

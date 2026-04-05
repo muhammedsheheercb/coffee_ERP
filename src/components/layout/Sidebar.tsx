@@ -5,7 +5,7 @@ import { signOut } from "next-auth/react";
 import {
     LayoutDashboard, Package, Users, ShoppingCart,
     TruckIcon, Briefcase, LogOut, ChevronLeft, ChevronRight,
-    ReceiptText, Receipt, Undo2, Ban, ShieldCheck
+    ReceiptText, Receipt, Undo2, Ban, ShieldCheck, Clock
 } from "lucide-react";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -20,6 +20,7 @@ const navItems = [
     { href: "/suppliers", label: "Suppliers", icon: TruckIcon, permission: "suppliers" },
     { href: "/sales-returns", label: "Sales Returns", icon: Undo2, permission: "sales_returns" },
     { href: "/damaged-items", label: "Damaged Items", icon: Ban, permission: "damaged_items" },
+    { href: "/expiry-alerts", label: "Nearest Expiry", icon: Clock, permission: "items" },
     { href: "/users", label: "Users", icon: ShieldCheck, role: "admin" },
 ];
 

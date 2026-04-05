@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       supplier.balanceHistory.push({
         date: date ? new Date(date) : new Date(),
         amount: amount,
-        type: "adjustment", // Map 'add' or 'subtract' to 'adjustment'
+        type: adjustType === "subtract" ? "payment" : "adjustment",
         paymentMethod: paymentMethod || "cash",
         note: note || "Manual adjustment"
       });
@@ -91,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: true, data: supplier });
     }
 
-    const { creditBalance: _cb, balanceHistory: _bh, openingBalance, ...updates } = body;
+    const { balanceHistory: _bh, openingBalance, creditBalance, ...updates } = body;
     
     const supplier = await Supplier.findById(id);
     if (!supplier) return NextResponse.json({ success: false, error: "Supplier not found" }, { status: 404 });
@@ -105,9 +105,24 @@ export async function PUT(req: NextRequest, { params }: Params) {
       supplier.balanceHistory.push({
         date: new Date(),
         amount: Math.abs(diff),
-        type: "adjustment",
+        type: diff > 0 ? "adjustment" : "payment",
         paymentMethod: "cash",
         note: "Opening Balance Correction"
+      });
+    }
+
+    // Handle Current Balance Update (if specifically provided)
+    if (creditBalance !== undefined && creditBalance !== supplier.creditBalance) {
+      const diff = Number(creditBalance) - (supplier.creditBalance || 0);
+      supplier.creditBalance = Number(creditBalance);
+      
+      if (!supplier.balanceHistory) supplier.balanceHistory = [];
+      supplier.balanceHistory.push({
+        date: new Date(),
+        amount: Math.abs(diff),
+        type: diff > 0 ? "adjustment" : "payment",
+        paymentMethod: "cash",
+        note: "Balance Update (Edit Profile)"
       });
     }
 

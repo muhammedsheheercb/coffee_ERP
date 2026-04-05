@@ -85,12 +85,13 @@ export async function POST(req: NextRequest) {
     if (itemData.quantity > 0) {
       itemData.batches = [{
         purchaseNumber: "OPENING",
+        batchNumber: body.batchNumber || "OPN-INT",
         manufacturingDate: body.manufacturingDate,
         expiryDate: body.expiryDate,
         purchasePrice: body.purchaseAmount ?? 0,
         salePrice: body.salesAmount ?? 0,
         quantity: body.quantity ?? 0,
-        createdAt: new Date()
+        createdAt: body.batchDate ? new Date(body.batchDate) : new Date()
       }];
     }
 

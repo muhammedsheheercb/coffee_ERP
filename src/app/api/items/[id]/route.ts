@@ -39,7 +39,28 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const body = await req.json();
     body.updatedBy = session.user.id;
 
-    const item = await Item.findByIdAndUpdate(id, body, { new: true, runValidators: true }).lean();
+    let item;
+    if (body.isOpeningStock) {
+      item = await Item.findByIdAndUpdate(id, {
+        $inc: { quantity: body.quantity },
+        $set: { updatedBy: session.user.id },
+        $push: {
+          batches: {
+            purchaseNumber: "OPENING",
+            batchNumber: body.batchNumber || "OPN-INT",
+            purchasePrice: body.purchaseAmount || 0,
+            salePrice: body.salesAmount || 0,
+            quantity: body.quantity || 0,
+            manufacturingDate: body.manufacturingDate,
+            expiryDate: body.expiryDate,
+            createdAt: body.batchDate ? new Date(body.batchDate) : new Date()
+          }
+        }
+      }, { new: true }).lean();
+    } else {
+      item = await Item.findByIdAndUpdate(id, body, { new: true, runValidators: true }).lean();
+    }
+    
     if (!item) return NextResponse.json({ success: false, error: "Item not found" }, { status: 404 });
 
     return NextResponse.json({ success: true, data: item });

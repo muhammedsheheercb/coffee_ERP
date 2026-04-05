@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       Sale.aggregate([
         { $match: matchRange },
-        { $group: { _id: null, total: { $sum: "$total" } } },
+        { $group: { _id: "$paymentType", total: { $sum: "$total" } } },
       ]),
       SaleReturn.aggregate([
         { $match: matchRange },
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       ]),
       Purchase.aggregate([
         { $match: matchRange },
-        { $group: { _id: null, total: { $sum: "$total" } } },
+        { $group: { _id: "$paymentType", total: { $sum: "$total" } } },
       ]),
       Expense.aggregate([
         { $match: matchRange },
@@ -81,10 +81,25 @@ export async function GET(req: NextRequest) {
       ]),
     ]);
 
-    const rawSales      = salesAgg[0]?.total ?? 0;
     const totalReturns   = returnsAgg[0]?.total ?? 0;
-    const totalSales     = rawSales - totalReturns; // Net Sales
-    const totalPurchases = purchasesAgg[0]?.total ?? 0;
+    
+    // Aggregate by payment type
+    const salesByPayment = salesAgg.reduce((acc: any, curr: any) => {
+      acc[curr._id] = curr.total;
+      return acc;
+    }, {});
+    const rawSales = Object.values(salesByPayment).reduce((sum: any, val: any) => sum + val, 0) as number;
+    const totalSales = rawSales - totalReturns; // Net Sales
+    const cashSales = salesByPayment["cash"] || 0;
+    const bankSales = salesByPayment["bank"] || 0;
+    
+    const purchasesByPayment = purchasesAgg.reduce((acc: any, curr: any) => {
+      acc[curr._id] = curr.total;
+      return acc;
+    }, {});
+    const totalPurchases = Object.values(purchasesByPayment).reduce((sum: any, val: any) => sum + val, 0) as number;
+    const cashPurchases = purchasesByPayment["cash"] || 0;
+    const bankPurchases = purchasesByPayment["bank"] || 0;
     const totalExpenses  = expensesAgg[0]?.total ?? 0;
     const totalRevenue   = totalSales - totalPurchases - totalExpenses;
     const totalReceivable = receivableAgg[0]?.total ?? 0;
@@ -139,7 +154,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers, totalReceivable, totalPayable },
+      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers, totalReceivable, totalPayable, cashSales, bankSales, cashPurchases, bankPurchases },
       chartData,
     });
   } catch (err) {

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ShoppingBag, ShoppingCart, TrendingUp, Users, Package, Truck, Receipt, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import SalesChart from "@/components/dashboard/SalesChart";
 import Spinner from "@/components/ui/Spinner";
+import Modal from "@/components/ui/Modal";
 import { IKpiData, IChartData } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export default function DashboardPage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(true);
+    const [popupType, setPopupType] = useState<"sales" | "purchases" | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -106,7 +108,25 @@ export default function DashboardPage() {
                             }
 
                             return (
-                                <div key={key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                                <div 
+                                    key={key} 
+                                    onClick={() => {
+                                        if (key === "totalSales") setPopupType("sales");
+                                        else if (key === "totalPurchases") setPopupType("purchases");
+                                    }}
+                                    style={{ 
+                                        background: "#fff", 
+                                        border: "1px solid #e5e7eb", 
+                                        borderRadius: "12px", 
+                                        padding: "16px", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        gap: "12px", 
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                                        cursor: (key === "totalSales" || key === "totalPurchases") ? "pointer" : "default" 
+                                    }}
+                                    className={(key === "totalSales" || key === "totalPurchases") ? "hover:border-indigo-300 transition-colors" : ""}
+                                >
                                     <div style={{ background: bg, borderRadius: "10px", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                         <Icon size={20} color={color} />
                                     </div>
@@ -128,6 +148,30 @@ export default function DashboardPage() {
 
                     {/* chart */}
                     <SalesChart data={chart} />
+
+                    {/* Breakdown Modal */}
+                    <Modal
+                        open={!!popupType}
+                        onClose={() => setPopupType(null)}
+                        title={popupType === "sales" ? "Total Sales Breakdown" : "Total Purchases Breakdown"}
+                    >
+                        {popupType && kpi && (
+                            <div className="flex flex-col gap-4 p-2">
+                                <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                                    <span className="font-semibold text-emerald-800">Cash {popupType === "sales" ? "Sales" : "Purchases"}</span>
+                                    <span className="font-bold text-emerald-600 text-lg">
+                                        {formatCurrency(popupType === "sales" ? (kpi.cashSales || 0) : (kpi.cashPurchases || 0))}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                                    <span className="font-semibold text-indigo-800">Bank (Online) {popupType === "sales" ? "Sales" : "Purchases"}</span>
+                                    <span className="font-bold text-indigo-600 text-lg">
+                                        {formatCurrency(popupType === "sales" ? (kpi.bankSales || 0) : (kpi.bankPurchases || 0))}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </Modal>
                 </>
             )}
         </div>

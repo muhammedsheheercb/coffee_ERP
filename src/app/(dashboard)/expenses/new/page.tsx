@@ -122,7 +122,7 @@ export default function NewExpensePage() {
                                     className={`flex-1 py-2 rounded-lg text-[10px] font-bold border transition-all uppercase tracking-tighter
                     ${form.paymentType === t ? "bg-red-600 text-white border-red-600 shadow-md translate-y-[-1px]" : "border-gray-300 text-gray-600 hover:bg-gray-50 bg-white"}`}
                                 >
-                                    {t}
+                                    {t === 'bank' ? 'bank (online)' : t}
                                 </button>
                             ))}
                         </div>

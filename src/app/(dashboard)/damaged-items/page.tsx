@@ -86,6 +86,26 @@ export default function DamagedItemsPage() {
             return;
         }
 
+        const selectedItem = items.find(i => i._id === formData.itemId);
+        if (selectedItem) {
+            let maxQuantity = 0;
+            if (formData.batch) {
+                const batchObj = selectedItem.batches?.find(b => b.batchNumber === formData.batch);
+                maxQuantity = batchObj?.quantity || 0;
+            } else {
+                maxQuantity = selectedItem.quantity || 0;
+            }
+
+            if (editingDamage && editingDamage.itemId === formData.itemId && editingDamage.batch === formData.batch) {
+                maxQuantity += editingDamage.quantity;
+            }
+            
+            if (Number(formData.quantity) > maxQuantity) {
+                toast.error(`Cannot add more than available quantity (${maxQuantity})`);
+                return;
+            }
+        }
+
         try {
             const url = editingDamage ? `/api/damaged-items/${editingDamage._id}` : "/api/damaged-items";
             const method = editingDamage ? "PUT" : "POST";
@@ -100,6 +120,7 @@ export default function DamagedItemsPage() {
                 toast.success(editingDamage ? "Record updated" : "Damaged item recorded");
                 setModalOpen(false);
                 fetchDamagedItems();
+                fetchItems();
             } else {
                 const data = await res.json();
                 toast.error(data.error || "Failed to save damaged item");
@@ -127,6 +148,7 @@ export default function DamagedItemsPage() {
                 toast.success("Record deleted and quantity restored");
                 setDeleteId(null);
                 fetchDamagedItems();
+                fetchItems();
             } else {
                 const data = await res.json();
                 toast.error(data.error || "Failed to delete");

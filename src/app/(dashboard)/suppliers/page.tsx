@@ -135,8 +135,9 @@ export default function SuppliersPage() {
                         <tr className="border-b border-gray-200">
                             <th className="th">Supplier # <SortBtn col="supplierNumber" /></th>
                             <th className="th">Name <SortBtn col="name" /></th>
+                            <th className="th">Mobile</th>
                             <th className="th text-center">Items Provided</th>
-                            <th className="th text-right">Opening Balance <SortBtn col="openingBalance" /></th>
+                            <th className="th text-right">Balance <SortBtn col="creditBalance" /></th>
                             <th className="th">Created <SortBtn col="createdAt" /></th>
                             {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
@@ -151,16 +152,17 @@ export default function SuppliersPage() {
                             <tr key={s._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{s.supplierNumber}</td>
                                 <td className="td font-medium text-gray-800">{s.name}</td>
+                                <td className="td text-gray-500">{s.mobile || "-"}</td>
                                 <td className="td text-center">
                                     <Badge label={`${s.itemsProvided?.length ?? 0} items`} variant="info" />
                                 </td>
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <Badge
-                                            label={formatCurrency(s.openingBalance || 0)}
-                                            variant={(s.openingBalance || 0) > 0 ? "warning" : "default"}
+                                            label={formatCurrency(s.creditBalance || 0)}
+                                            variant={(s.creditBalance || 0) > 0 ? "warning" : (s.creditBalance || 0) < 0 ? "danger" : "success"}
                                         />
-                                        <Button variant="ghost" size="xs" icon={<PlusCircle size={14} />} 
+                                        <Button variant="ghost" size="xs" icon={<PlusCircle size={14} className="text-indigo-500" />} 
                                             onClick={() => { setAdjustSupplier(s); setAdjustModalOpen(true); }} 
                                             title="Adjust Balance"
                                         />

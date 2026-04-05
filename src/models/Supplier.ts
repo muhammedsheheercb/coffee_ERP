@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface ISupplierDocument extends Document {
   supplierNumber: string;
   name: string;
+  mobile?: string;
   itemsProvided: string[];
   openingBalance: number;
   creditBalance: number;
@@ -31,6 +32,10 @@ const SupplierSchema = new Schema<ISupplierDocument>(
       type: String,
       required: [true, "Supplier name is required"],
       unique: true,
+      trim: true,
+    },
+    mobile: {
+      type: String,
       trim: true,
     },
     itemsProvided: [

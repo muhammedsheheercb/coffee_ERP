@@ -38,7 +38,7 @@ export interface ISaleDocument extends Document {
   subtotal: number;
   tax: number;
   total: number;
-  paymentType: "cash" | "credit";
+  paymentType: "cash" | "bank" | "credit";
   date: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -67,7 +67,7 @@ const SaleSchema = new Schema<ISaleDocument>(
     total: { type: Number, required: true, min: 0 },
     paymentType: {
       type: String,
-      enum: ["cash", "credit"],
+      enum: ["cash", "credit", "bank"],
       required: true,
     },
     date: { type: Date, default: Date.now },

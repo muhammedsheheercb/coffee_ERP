@@ -11,13 +11,9 @@ interface BalanceHistoryModalProps {
 }
 
 export default function BalanceHistoryModal({ open, onClose, entityName, history }: BalanceHistoryModalProps) {
-  // Sort history with the latest (newest) record at the TOP
-  const displayHistory = history 
-    ? [...history].sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : 0;
-        const dateB = b.date ? new Date(b.date).getTime() : 0;
-        return dateB - dateA;
-      }) 
+  // Reverse array to show the latest inserted record at the TOP
+  const displayHistory = history && history.length > 0
+    ? [...history].reverse()
     : [];
 
   return (

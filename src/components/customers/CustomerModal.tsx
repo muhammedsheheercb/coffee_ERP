@@ -48,17 +48,17 @@ export default function CustomerModal({
       reset(
         customer
           ? {
-              customerNumber: customer.customerNumber,
-              name: customer.name,
-              mobile: customer.mobile,
-              balance: customer.creditBalance ?? customer.openingBalance ?? 0,
-            }
-          : { 
-              customerNumber: generateCustomerID(), 
-              name: "", 
-              mobile: "", 
-              balance: 0 
-            },
+            customerNumber: customer.customerNumber,
+            name: customer.name,
+            mobile: customer.mobile,
+            balance: customer.creditBalance ?? customer.openingBalance ?? 0,
+          }
+          : {
+            customerNumber: generateCustomerID(),
+            name: "",
+            mobile: "",
+            balance: 0
+          },
       );
     }
   }, [open, customer, reset]);

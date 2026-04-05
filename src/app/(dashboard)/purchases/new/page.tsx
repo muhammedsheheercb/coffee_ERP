@@ -244,7 +244,7 @@ export default function NewPurchasePage() {
                                 ${paymentType === 'bank' ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
                             >
                               <span className={`w-2 h-2 rounded-full ${paymentType === 'bank' ? 'bg-indigo-500' : 'bg-gray-200'}`}></span>
-                              BANK
+                              BANK (ONLINE)
                             </button>
                             <button 
                               type="button" 

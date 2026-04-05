@@ -51,9 +51,16 @@ export default function ItemsPage() {
         else { setSortBy(col); setSortOrder("asc"); }
     };
 
-    const handleSubmit = async (data: Parameters<typeof createItem>[0]) => {
+    const handleSubmit = async (data: Parameters<typeof createItem>[0] & { itemId?: string }) => {
         setSaving(true);
-        const ok = editItem ? await updateItem(editItem._id, data) : await createItem(data);
+        let ok = false;
+        if (editItem) {
+            ok = await updateItem(editItem._id, data);
+        } else if (modalMode === "opening_stock" && data.itemId) {
+            ok = await updateItem(data.itemId, { ...data, isOpeningStock: true } as any);
+        } else {
+            ok = await createItem(data);
+        }
         setSaving(false);
         if (ok) { setModalOpen(false); setEditItem(null); load(); }
     };
@@ -122,19 +129,16 @@ export default function ItemsPage() {
                             <th className="th">Item Number <SortBtn col="itemNumber" /></th>
                             <th className="th">Item Name <SortBtn col="name" /></th>
                             <th className="th text-right">Qty <SortBtn col="quantity" /></th>
-                            <th className="th text-right">Purchase Price <SortBtn col="purchaseAmount" /></th>
-                            <th className="th text-right">Sales Price <SortBtn col="salesAmount" /></th>
-                            <th className="th text-right">Mfg Date <SortBtn col="manufacturingDate" /></th>
-                            <th className="th text-right">Exp Date <SortBtn col="expiryDate" /></th>
+                            <th className="th text-center">Batch Details</th>
                             {isAdmin && <th className="th text-right">Created By</th>}
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={isAdmin ? 9 : 8} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 6 : 5} className="py-16 text-center"><Spinner /></td></tr>
                         ) : items.length === 0 ? (
-                            <tr><td colSpan={isAdmin ? 9 : 8} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
+                            <tr><td colSpan={isAdmin ? 6 : 5} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
                         ) : items.map((item: IItem) => (
                             <React.Fragment key={item._id}>
                                 <tr className="tr-hover">
@@ -146,10 +150,17 @@ export default function ItemsPage() {
                                             variant={item.quantity === 0 ? "danger" : item.quantity < 10 ? "warning" : "success"}
                                         />
                                     </td>
-                                    <td className="td text-right font-mono text-xs text-orange-600">{formatCurrency(item.purchaseAmount || 0)}</td>
-                                    <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
-                                    <td className="td text-right text-[10px] text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}</td>
-                                    <td className="td text-right text-[10px] text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "-"}</td>
+                                    <td className="td text-center">
+                                        <Button
+                                            variant="outline" size="xs"
+                                            title="View Batches"
+                                            className="ml-auto mr-auto border-gray-200"
+                                            icon={expandedItemId === item._id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                            onClick={() => setExpandedItemId(expandedItemId === item._id ? null : item._id)}
+                                        >
+                                            View Batches
+                                        </Button>
+                                    </td>
                                     {isAdmin && (
                                         <td className="td text-right">
                                             <div className="flex flex-col items-end">
@@ -162,12 +173,6 @@ export default function ItemsPage() {
                                     )}
                                     <td className="td text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <Button
-                                                variant="ghost" size="xs"
-                                                title="View Batches"
-                                                icon={expandedItemId === item._id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                onClick={() => setExpandedItemId(expandedItemId === item._id ? null : item._id)}
-                                            />
                                             {canEdit && (
                                                 <Button
                                                     variant="ghost" size="xs"
@@ -187,7 +192,7 @@ export default function ItemsPage() {
                                 </tr>
                                 {expandedItemId === item._id && (
                                     <tr className="bg-amber-50/30">
-                                        <td colSpan={isAdmin ? 9 : 8} className="p-4 border-t border-amber-100">
+                                        <td colSpan={isAdmin ? 6 : 5} className="p-4 border-t border-amber-100">
                                             <div className="text-xs font-bold text-amber-800 mb-2 px-1 flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                                                 ITEM BATCH HISTORY
@@ -204,6 +209,7 @@ export default function ItemsPage() {
                                                                 <th className="px-3 py-2 text-right font-semibold text-amber-900 border-b border-amber-100">Sales Price</th>
                                                                 <th className="px-3 py-2 text-center font-semibold text-amber-900 border-b border-amber-100">Mfg Date</th>
                                                                 <th className="px-3 py-2 text-center font-semibold text-amber-900 border-b border-amber-100">Exp Date</th>
+                                                                <th className="px-3 py-2 text-right font-semibold text-amber-900 border-b border-amber-100">Total Amount</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-amber-50">
@@ -216,6 +222,7 @@ export default function ItemsPage() {
                                                                     <td className="px-3 py-2 text-right font-semibold text-indigo-600">{formatCurrency(batch.salePrice)}</td>
                                                                     <td className="px-3 py-2 text-center text-gray-500">{batch.manufacturingDate ? formatDate(batch.manufacturingDate) : "-"}</td>
                                                                     <td className="px-3 py-2 text-center text-gray-500">{batch.expiryDate ? formatDate(batch.expiryDate) : "-"}</td>
+                                                                    <td className="px-3 py-2 text-right font-bold text-amber-800">{formatCurrency((batch.purchasePrice || 0) * (batch.quantity || 0))}</td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>

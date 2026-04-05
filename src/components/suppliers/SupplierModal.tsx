@@ -13,7 +13,8 @@ import { generateSupplierID } from "@/lib/utils";
 const schema = z.object({
     supplierNumber: z.string().min(1, "Supplier number is required"),
     name: z.string().min(1, "Name is required"),
-    openingBalance: z.coerce.number().min(0, "Opening balance cannot be negative").default(0),
+    mobile: z.string().optional(),
+    balance: z.coerce.number().min(0, "Balance cannot be negative").default(0),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -37,16 +38,30 @@ export default function SupplierModal({ open, onClose, onSubmit, supplier, loadi
                 ? { 
                     supplierNumber: supplier.supplierNumber, 
                     name: supplier.name, 
-                    openingBalance: supplier.openingBalance || 0 
+                    mobile: supplier.mobile || "",
+                    balance: supplier.creditBalance ?? supplier.openingBalance ?? 0,
                 }
                 : { 
                     supplierNumber: generateSupplierID(), 
                     name: "", 
-                    openingBalance: 0 
+                    mobile: "",
+                    balance: 0,
                 }
             );
         }
     }, [open, supplier, reset]);
+
+    const onFinalSubmit = (data: FormData) => {
+        const payload: any = { ...data };
+        if (isEdit) {
+            payload.creditBalance = data.balance;
+            delete payload.balance;
+        } else {
+            payload.openingBalance = data.balance;
+            delete payload.balance;
+        }
+        onSubmit(payload);
+    };
 
     return (
         <Modal
@@ -62,14 +77,14 @@ export default function SupplierModal({ open, onClose, onSubmit, supplier, loadi
                 </>
             }
         >
-            <form id="supplier-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form id="supplier-form" onSubmit={handleSubmit(onFinalSubmit)} className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input label="Supplier number" placeholder="SUP-001" required readOnly disabled error={errors.supplierNumber?.message} {...register("supplierNumber")} />
                     <Input label="Name" placeholder="Supplier name" required error={errors.name?.message}           {...register("name")} />
+                    <Input label="Mobile number" placeholder="9876543210" error={errors.mobile?.message} {...register("mobile")} />
+                    <Input label={isEdit ? "Opening Balance (OMR)" : "Opening balance (OMR)"} type="number" step="0.001" placeholder="0.000"
+                        error={errors.balance?.message} {...register("balance")} />
                 </div>
-                <Input label="Opening balance (OMR)" type="number" step="0.001" placeholder="0.000"
-                    hint="Amount you owe this supplier. Auto-updated on credit purchases."
-                    error={errors.openingBalance?.message} {...register("openingBalance")} />
             </form>
         </Modal>
     );
