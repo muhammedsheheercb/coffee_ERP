@@ -252,6 +252,8 @@ export interface IKpiData {
   totalCustomers: number;
   totalItems: number;
   totalSuppliers: number;
+  totalReceivable: number;
+  totalPayable: number;
 }
 
 export interface IChartData {

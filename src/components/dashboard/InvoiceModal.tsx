@@ -13,6 +13,8 @@ interface InvoiceItem {
     price: number;
     total: number;
     isFOC?: boolean;
+    manufacturingDate?: string;
+    expiryDate?: string;
 }
 
 interface InvoiceData {
@@ -55,20 +57,21 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
 
         autoTable(doc, {
             startY: 70,
-            head: [["#", "Item", "Qty", "Price", data.type === "Purchase" ? "Stock Value" : "Total"]],
+            head: [["#", "Item", "Details", "Qty", "Price", data.type === "Purchase" ? "Stock Value" : "Total"]],
             body: data.items.map((item, i) => [
                 i + 1,
                 item.itemName + (item.isFOC ? " (FOC)" : ""),
+                `MFG: ${item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}\nEXP: ${item.expiryDate ? formatDate(item.expiryDate) : "-"}`,
                 item.quantity,
                 item.isFOC ? "0.00" : formatCurrency(item.price),
                 formatCurrency(item.total)
             ]),
             foot: [
-                ["", "", "", "Subtotal", formatCurrency(subtotal)],
-                ["", "", "", `Tax (${tax}%)`, formatCurrency(taxAmt)],
-                ["", "", "", "Total", formatCurrency(data.total)],
+                ["", "", "", "", "Subtotal", formatCurrency(subtotal)],
+                ["", "", "", "", `Tax (${tax}%)`, formatCurrency(taxAmt)],
+                ["", "", "", "", "Total", formatCurrency(data.total)],
             ],
-            styles: { fontSize: 10 },
+            styles: { fontSize: 9 },
             footStyles: { fontStyle: "bold" },
         });
 
@@ -77,7 +80,7 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-gray-100">
                     <div>
@@ -125,10 +128,11 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
 
                     {/* Items Table */}
                     <div className="border border-gray-100 rounded-xl overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[500px]">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Item Details</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">MFG / EXP</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Qty</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Price</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">{data.type === "Purchase" ? "Stock Value" : "Total"}</th>
@@ -140,6 +144,18 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                                         <td className="px-4 py-3">
                                             <p className="font-medium text-gray-800">{item.itemName}</p>
                                             <p className="text-[10px] font-mono text-gray-400">{item.itemNumber}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[9px] font-bold text-gray-400 w-6">MFG</span>
+                                                    <span className="text-[10px] text-gray-600 font-medium">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "—"}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[9px] font-bold text-gray-400 w-6">EXP</span>
+                                                    <span className="text-[10px] text-amber-600 font-bold">{item.expiryDate ? formatDate(item.expiryDate) : "—"}</span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
                                         <td className="px-4 py-3 text-right text-gray-600">{item.isFOC ? "—" : formatCurrency(item.price)}</td>

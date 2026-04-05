@@ -89,11 +89,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: true, data: customer });
     }
 
-    const { creditBalance: _cb, balanceHistory: _bh, openingBalance, ...updates } = body;
+    const { creditBalance, balanceHistory: _bh, openingBalance, ...updates } = body;
     
     const customer = await Customer.findById(id);
     if (!customer) return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
 
+    // 1. Handle Opening Balance Correction
     if (openingBalance !== undefined && openingBalance !== customer.openingBalance) {
       const diff = openingBalance - (customer.openingBalance || 0);
       customer.openingBalance = openingBalance;
@@ -106,6 +107,21 @@ export async function PUT(req: NextRequest, { params }: Params) {
         type: diff > 0 ? "adjustment" : "payment",
         paymentMethod: "credit",
         note: "Opening Balance Correction"
+      });
+    }
+
+    // 2. Handle Current Balance Update (if specifically provided)
+    if (creditBalance !== undefined && creditBalance !== customer.creditBalance) {
+      const diff = Number(creditBalance) - (customer.creditBalance || 0);
+      customer.creditBalance = Number(creditBalance);
+      
+      if (!customer.balanceHistory) customer.balanceHistory = [];
+      customer.balanceHistory.push({
+        date: new Date(),
+        amount: Math.abs(diff),
+        type: diff > 0 ? "adjustment" : "payment",
+        paymentMethod: "credit",
+        note: "Balance Update (Edit Profile)"
       });
     }
 

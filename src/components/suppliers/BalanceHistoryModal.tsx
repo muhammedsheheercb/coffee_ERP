@@ -1,6 +1,6 @@
 "use client";
 import Modal from "@/components/ui/Modal";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { IBalanceHistory } from "@/types";
 
 interface BalanceHistoryModalProps {
@@ -28,7 +28,7 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
               history.slice().reverse().map((item, idx) => (
                 <tr key={idx} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-                    {new Date(item.date).toLocaleDateString()}
+                    {formatDate(item.date)}
                   </td>
                   <td className={`px-4 py-3 text-sm font-bold text-right whitespace-nowrap ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {item.amount >= 0 ? '+' : ''}{formatCurrency(item.amount)}

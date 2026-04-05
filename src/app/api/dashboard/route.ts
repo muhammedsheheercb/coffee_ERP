@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import Sale from "@/models/Sale";
 import Purchase from "@/models/Purchase";
 import Expense from "@/models/Expense";
+import SaleReturn from "@/models/SaleReturn";
 import Customer from "@/models/Customer";
 import Item from "@/models/Item";
 import Supplier from "@/models/Supplier";
@@ -44,15 +45,22 @@ export async function GET(req: NextRequest) {
     // ── KPI totals ──────────────────────────────────
     const [
       salesAgg,
+      returnsAgg,
       purchasesAgg,
       expensesAgg,
       totalCustomers,
       totalItems,
       totalSuppliers,
+      receivableAgg,
+      payableAgg,
     ] = await Promise.all([
       Sale.aggregate([
         { $match: matchRange },
         { $group: { _id: null, total: { $sum: "$total" } } },
+      ]),
+      SaleReturn.aggregate([
+        { $match: matchRange },
+        { $group: { _id: null, total: { $sum: "$totalAmount" } } },
       ]),
       Purchase.aggregate([
         { $match: matchRange },
@@ -65,20 +73,38 @@ export async function GET(req: NextRequest) {
       Customer.countDocuments(),
       Item.countDocuments(),
       Supplier.countDocuments(),
+      Customer.aggregate([
+        { $group: { _id: null, total: { $sum: "$creditBalance" } } }
+      ]),
+      Supplier.aggregate([
+        { $group: { _id: null, total: { $sum: "$creditBalance" } } }
+      ]),
     ]);
 
-    const totalSales     = salesAgg[0]?.total ?? 0;
+    const rawSales      = salesAgg[0]?.total ?? 0;
+    const totalReturns   = returnsAgg[0]?.total ?? 0;
+    const totalSales     = rawSales - totalReturns; // Net Sales
     const totalPurchases = purchasesAgg[0]?.total ?? 0;
     const totalExpenses  = expensesAgg[0]?.total ?? 0;
     const totalRevenue   = totalSales - totalPurchases - totalExpenses;
+    const totalReceivable = receivableAgg[0]?.total ?? 0;
+    const totalPayable    = payableAgg[0]?.total ?? 0;
 
     // ── Monthly chart data ───────────────────────────
-    const [monthlySales, monthlyPurchases, monthlyExpenses] = await Promise.all([
+    const [monthlySales, monthlyReturns, monthlyPurchases, monthlyExpenses] = await Promise.all([
       Sale.aggregate([
         { $match: { date: { $gte: yearStart, $lte: yearEnd } } },
         { $group: {
           _id: { month: { $month: "$date" } },
           total: { $sum: "$total" },
+        }},
+        { $sort: { "_id.month": 1 } },
+      ]),
+      SaleReturn.aggregate([
+        { $match: { date: { $gte: yearStart, $lte: yearEnd } } },
+        { $group: {
+          _id: { month: { $month: "$date" } },
+          total: { $sum: "$totalAmount" },
         }},
         { $sort: { "_id.month": 1 } },
       ]),
@@ -103,7 +129,9 @@ export async function GET(req: NextRequest) {
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const chartData = months.map((month, i) => {
       const m      = i + 1;
-      const sales  = monthlySales.find(s => s._id.month === m)?.total ?? 0;
+      const rawS   = monthlySales.find(s => s._id.month === m)?.total ?? 0;
+      const retS   = monthlyReturns.find(r => r._id.month === m)?.total ?? 0;
+      const sales  = rawS - retS;
       const purch  = monthlyPurchases.find(p => p._id.month === m)?.total ?? 0;
       const expens = monthlyExpenses.find(e => e._id.month === m)?.total ?? 0;
       return { month, sales, purchases: purch, expenses: expens, revenue: sales - purch - expens };
@@ -111,7 +139,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers },
+      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers, totalReceivable, totalPayable },
       chartData,
     });
   } catch (err) {

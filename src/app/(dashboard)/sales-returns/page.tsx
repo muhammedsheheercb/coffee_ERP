@@ -13,7 +13,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Select from "react-select";
 import { toast } from "react-hot-toast";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { ISale, ISaleItem, ICustomer } from "@/types";
 
 import Pagination from "@/components/ui/Pagination";
@@ -220,7 +220,7 @@ export default function SalesReturnsPage() {
                                     <td className="px-6 py-4 text-gray-600">{ret.saleNumber}</td>
                                     <td className="px-6 py-4 text-gray-900 font-medium">{ret.customerName}</td>
                                     <td className="px-6 py-4 font-bold text-red-600">{formatCurrency(ret.totalAmount)}</td>
-                                    <td className="px-6 py-4 text-gray-500">{new Date(ret.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 text-gray-500">{formatDate(ret.date)}</td>
                                     {isAdmin && (
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex flex-col items-end">
@@ -302,7 +302,7 @@ export default function SalesReturnsPage() {
                                 </div>
                                 <div>
                                     <span className="text-gray-500">Sale Date:</span>
-                                    <span className="ml-2 font-semibold text-gray-900">{new Date(selectedSale.date).toLocaleDateString()}</span>
+                                    <span className="ml-2 font-semibold text-gray-900">{formatDate(selectedSale.date)}</span>
                                 </div>
                             </div>
 

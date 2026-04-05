@@ -14,14 +14,14 @@ const schema = z.object({
   customerNumber: z.string().min(1, "Customer number is required"),
   name: z.string().min(1, "Name is required"),
   mobile: z.string().regex(/^\d{8}$/, "Mobile must be exactly 8 digits without spaces/symbols"),
-  openingBalance: z.coerce.number().min(0, "Opening balance cannot be negative").default(0),
+  balance: z.coerce.number().min(0, "Balance cannot be negative").default(0),
 });
 type FormData = z.infer<typeof schema>;
 
 interface CustomerModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   customer?: ICustomer | null;
   loading?: boolean;
 }
@@ -51,17 +51,29 @@ export default function CustomerModal({
               customerNumber: customer.customerNumber,
               name: customer.name,
               mobile: customer.mobile,
-              openingBalance: customer.openingBalance || 0,
+              balance: customer.creditBalance ?? customer.openingBalance ?? 0,
             }
           : { 
               customerNumber: generateCustomerID(), 
               name: "", 
               mobile: "", 
-              openingBalance: 0 
+              balance: 0 
             },
       );
     }
   }, [open, customer, reset]);
+
+  const onFinalSubmit = (data: FormData) => {
+    const payload: any = { ...data };
+    if (isEdit) {
+      payload.creditBalance = data.balance;
+      delete payload.balance;
+    } else {
+      payload.openingBalance = data.balance;
+      delete payload.balance;
+    }
+    onSubmit(payload);
+  };
 
   return (
     <Modal
@@ -81,7 +93,7 @@ export default function CustomerModal({
     >
       <form
         id="customer-form"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onFinalSubmit)}
         className="flex flex-col gap-4"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -111,17 +123,17 @@ export default function CustomerModal({
             {...register("mobile")}
           />
           <Input
-            label="Balance (OMR)"
+            label={isEdit ? "Current Balance (OMR)" : "Opening Balance (OMR)"}
             type="number"
             step="0.001"
             placeholder="0.000"
-            error={errors.openingBalance?.message}
-            {...register("openingBalance")}
+            error={errors.balance?.message}
+            {...register("balance")}
           />
         </div>
         {isEdit && (
-          <p className="text-xs text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
-            Opening balance can be adjusted manually from the customer list.
+          <p className="text-xs text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+            This is the current outstanding balance. Adjusting this will record a manual balance update.
           </p>
         )}
       </form>

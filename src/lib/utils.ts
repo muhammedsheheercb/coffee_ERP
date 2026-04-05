@@ -18,9 +18,10 @@ export function formatCurrency(amount: number): string {
 
 // ─── Date format ────────────────────────────────────
 export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("en-OM", {
-    day: "2-digit",
+  if (!date) return "-";
+  return new Intl.DateTimeFormat("en-US", {
     month: "short",
+    day: "2-digit",
     year: "numeric",
   }).format(new Date(date));
 }

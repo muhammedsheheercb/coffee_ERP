@@ -12,7 +12,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Select from "react-select";
 import { toast } from "react-hot-toast";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { IItem } from "@/types";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
@@ -185,7 +185,7 @@ export default function DamagedItemsPage() {
                                         "{item.reason}"
                                     </td>
                                     <td className="px-6 py-4 text-center border-r border-gray-200 text-gray-500">
-                                        {new Date(item.date).toLocaleDateString()}
+                                        {formatDate(item.date)}
                                     </td>
                                     {isAdmin && (
                                         <td className="px-6 py-4 text-center border-r border-gray-200">

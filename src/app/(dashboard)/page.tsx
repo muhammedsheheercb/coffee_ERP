@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { ShoppingBag, ShoppingCart, TrendingUp, Users, Package, Truck, Receipt } from "lucide-react";
+import { ShoppingBag, ShoppingCart, TrendingUp, Users, Package, Truck, Receipt, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import SalesChart from "@/components/dashboard/SalesChart";
 import Spinner from "@/components/ui/Spinner";
 import { IKpiData, IChartData } from "@/types";
@@ -13,6 +13,8 @@ const kpiConfig = [
     { key: "totalPurchases", label: "Total Purchases", icon: ShoppingCart, color: "#f59e0b", bg: "#fffbeb" },
     { key: "totalExpenses", label: "Total Expenses", icon: Receipt, color: "#ef4444", bg: "#fef2f2" },
     { key: "totalRevenue", label: "Net Profit", icon: TrendingUp, color: "#10b981", bg: "#ecfdf5" },
+    { key: "totalReceivable", label: "Total Receivable", icon: ArrowUpRight, color: "#06b6d4", bg: "#ecfeff" },
+    { key: "totalPayable", label: "Total Payable", icon: ArrowDownRight, color: "#f43f5e", bg: "#fff1f2" },
     { key: "totalCustomers", label: "Customers", icon: Users, color: "#3b82f6", bg: "#eff6ff" },
     { key: "totalItems", label: "Items", icon: Package, color: "#8b5cf6", bg: "#f5f3ff" },
     { key: "totalSuppliers", label: "Suppliers", icon: Truck, color: "#ec4899", bg: "#fdf2f8" },
@@ -91,10 +93,10 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* KPI grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {kpiConfig.map(({ key, label, icon: Icon, color, bg }) => {
                             const val = kpi ? Number(kpi[key as keyof IKpiData]) : 0;
-                            const isCurrency = ["totalSales", "totalPurchases", "totalExpenses", "totalRevenue"].includes(key);
+                            const isCurrency = ["totalSales", "totalPurchases", "totalExpenses", "totalRevenue", "totalReceivable", "totalPayable"].includes(key);
                             const displayVal = isCurrency ? formatCurrency(val).replace("OMR", "").trim() : String(val);
                             
                             // Net Profit color logic
