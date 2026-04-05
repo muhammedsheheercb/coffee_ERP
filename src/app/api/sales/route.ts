@@ -92,13 +92,47 @@ export async function POST(req: NextRequest) {
     // 1 — create sale
     const [sale] = await Sale.create([{ ...body, saleNumber }], { session: dbSession });
 
-    // 2 — decrease item quantities
-    for (const item of body.items) {
-      await Item.findByIdAndUpdate(
-        item.itemId,
-        { $inc: { quantity: -item.quantity } },
-        { session: dbSession, new: true }
-      );
+    // 2 — decrease item quantities and batches (manual or FIFO)
+    for (const saleItem of body.items) {
+      const item = await Item.findById(saleItem.itemId).session(dbSession);
+      if (!item) throw new Error(`Item not found: ${saleItem.itemName}`);
+
+      // Update total quantity
+      item.quantity = (item.quantity || 0) - saleItem.quantity;
+
+      // Update batches (Manual Selection if provided, else FIFO)
+      if (item.batches && item.batches.length > 0) {
+        if (saleItem.batch) {
+          // Find specific batch - match by batchNumber
+          const batch = item.batches.find((b: any) => b.batchNumber === saleItem.batch);
+          if (batch) {
+            batch.quantity -= saleItem.quantity;
+          } else {
+            // Fallback to FIFO if batch name not found
+            let remainingToDeduct = saleItem.quantity;
+            item.batches.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            for (const b of item.batches) {
+              if (remainingToDeduct <= 0) break;
+              const deductFromThisBatch = Math.min(b.quantity, remainingToDeduct);
+              b.quantity -= deductFromThisBatch;
+              remainingToDeduct -= deductFromThisBatch;
+            }
+          }
+        } else {
+          // FIFO as before
+          let remainingToDeduct = saleItem.quantity;
+          item.batches.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+          for (const batch of item.batches) {
+            if (remainingToDeduct <= 0) break;
+            const deductFromThisBatch = Math.min(batch.quantity, remainingToDeduct);
+            batch.quantity -= deductFromThisBatch;
+            remainingToDeduct -= deductFromThisBatch;
+          }
+        }
+      }
+
+      await item.save({ session: dbSession });
     }
 
     // 3 — if credit sale, increase customer credit balance and record history

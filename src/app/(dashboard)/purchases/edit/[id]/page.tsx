@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Trash2, Save, FileDown, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, FileDown, Pencil, Minus, Plus as PlusIcon } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -119,12 +119,46 @@ export default function EditPurchasePage() {
         }]);
     };
 
-    const updateQty = (idx: number, qty: number) => {
-        setCart(prev => prev.map((c, i) => i === idx ? { ...c, quantity: qty, total: c.price * qty } : c));
+    const updateQty = (idx: number, qtyRaw: any) => {
+        setCart(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            const q = qtyRaw === "" ? 0 : Number(qtyRaw);
+            const val = q < 0 ? 0 : q;
+            return { 
+                ...c, 
+                quantity: qtyRaw === "" ? "" as any : val, 
+                total: Number((Number(c.price || 0) * val).toFixed(3)) 
+            };
+        }));
     };
 
-    const updatePrice = (idx: number, price: number) => {
-        setCart(prev => prev.map((c, i) => i === idx ? { ...c, price, total: price * c.quantity } : c));
+    const updatePrice = (idx: number, priceRaw: any) => {
+        setCart(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            const p = priceRaw === "" ? 0 : Number(priceRaw);
+            const val = p < 0 ? 0 : p;
+            const q = (c.quantity as any) === "" ? 0 : Number(c.quantity);
+            return { 
+                ...c, 
+                price: priceRaw === "" ? "" as any : val, 
+                total: Number((val * q).toFixed(3)) 
+            };
+        }));
+    };
+
+    const updateTotal = (idx: number, totalRaw: any) => {
+        setCart(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            const t = totalRaw === "" ? 0 : Number(totalRaw);
+            const val = t < 0 ? 0 : t;
+            const q = (c.quantity as any) === "" ? 0 : Number(c.quantity);
+            const newPrice = q > 0 ? Number((val / q).toFixed(3)) : c.price;
+            return { 
+                ...c, 
+                total: totalRaw === "" ? "" as any : val, 
+                price: newPrice 
+            };
+        }));
     };
 
     const removeItem = (idx: number) => setCart(prev => prev.filter((_, i) => i !== idx));
@@ -180,7 +214,16 @@ export default function EditPurchasePage() {
                             ))}
                         </div>
                     </div>
-                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))} />
+                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} 
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val === "") setTax("" as any);
+                            else {
+                                const n = Number(val);
+                                setTax(n < 0 ? 0 : n);
+                            }
+                        }} 
+                    />
                 </div>
 
                 <div>
@@ -196,6 +239,7 @@ export default function EditPurchasePage() {
                                     <th className="th text-left">Item</th>
                                     <th className="th text-right">Purchase Price</th>
                                     <th className="th text-right">Sales Price</th>
+                                    <th className="th text-center">Batch</th>
                                     <th className="th text-center">Mfg Date</th>
                                     <th className="th text-center">Exp Date</th>
                                     <th className="th text-center">Qty</th>
@@ -211,14 +255,22 @@ export default function EditPurchasePage() {
                                             <div className="text-xs text-gray-400">{c.itemNumber}</div>
                                         </td>
                                         <td className="td text-right">
-                                            <input type="number" min={0} step="0.001" value={c.price}
-                                                onChange={e => updatePrice(idx, (e.target.value === "" ? "" as any : Number(e.target.value)))}
+                                            <input type="number" step="0.001" value={c.price}
+                                                onChange={e => updatePrice(idx, e.target.value)}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500 ml-auto block" />
                                         </td>
                                         <td className="td text-right">
-                                            <input type="number" min={0} step="0.001" value={c.sellingPrice}
-                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, sellingPrice: (e.target.value === "" ? "" as any : Number(e.target.value)) } : item))}
+                                            <input type="number" step="0.001" value={c.sellingPrice}
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    const n = val === "" ? 0 : Number(val);
+                                                    setCart(prev => prev.map((item, i) => i === idx ? { ...item, sellingPrice: val === "" ? "" as any : (n < 0 ? 0 : n) } : item));
+                                                }}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block" />
+                                        </td>
+                                        <td className="td text-center">
+                                            <input type="text" value={c.batch} readOnly
+                                                className="w-24 px-2 py-1.5 text-[10px] text-right border border-gray-100 bg-gray-50 rounded-md text-gray-400 font-mono" />
                                         </td>
                                         <td className="td text-center">
                                             <input type="date" value={c.manufacturingDate}
@@ -231,11 +283,25 @@ export default function EditPurchasePage() {
                                                 className="w-32 px-2 py-1.5 text-[10px] text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500" />
                                         </td>
                                         <td className="td text-center">
-                                            <input type="number" min={1} value={c.quantity}
-                                                onChange={e => updateQty(idx, (e.target.value === "" ? "" as any : Number(e.target.value)))}
-                                                className="w-16 px-2 py-1.5 text-xs text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 mx-auto block" />
+                                            <div className="flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200 p-0.5 w-28 mx-auto">
+                                                <button onClick={() => updateQty(idx, ((c.quantity as any) === "" ? 0 : Number(c.quantity)) - 1)}
+                                                    className="p-1 hover:bg-white rounded hover:shadow-xs text-gray-500 transition-all">
+                                                    <Minus size={12} />
+                                                </button>
+                                                <input type="number" value={c.quantity}
+                                                    onChange={e => updateQty(idx, e.target.value)}
+                                                    className="w-10 text-center bg-transparent text-xs font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                                                <button onClick={() => updateQty(idx, ((c.quantity as any) === "" ? 0 : Number(c.quantity)) + 1)}
+                                                    className="p-1 hover:bg-white rounded hover:shadow-xs text-gray-500 transition-all">
+                                                    <PlusIcon size={12} />
+                                                </button>
+                                            </div>
                                         </td>
-                                        <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
+                                        <td className="td text-right">
+                                            <input type="number" step="0.01" value={c.total}
+                                                onChange={e => updateTotal(idx, e.target.value)}
+                                                className="w-24 px-2 py-1.5 text-xs text-right font-bold text-gray-900 border border-gray-200 rounded-md focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 ml-auto block" />
+                                        </td>
                                         <td className="td text-right">
                                             <Button variant="ghost" size="xs" icon={<Trash2 size={14} className="text-red-400 hover:text-red-600" />} onClick={() => removeItem(idx)} />
                                         </td>

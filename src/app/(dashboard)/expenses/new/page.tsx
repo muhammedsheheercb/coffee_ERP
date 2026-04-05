@@ -73,7 +73,14 @@ export default function NewExpensePage() {
                         min={0}
                         step="0.001"
                         value={form.amount}
-                        onChange={e => setForm({ ...form, amount: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val === "") setForm({ ...form, amount: "" as any });
+                            else {
+                                const n = Number(val);
+                                setForm({ ...form, amount: n < 0 ? 0 : n });
+                            }
+                        }}
                         required
                         leftIcon={<CreditCard size={16} />}
                     />

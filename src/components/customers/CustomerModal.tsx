@@ -14,7 +14,7 @@ const schema = z.object({
   customerNumber: z.string().min(1, "Customer number is required"),
   name: z.string().min(1, "Name is required"),
   mobile: z.string().regex(/^\d{8}$/, "Mobile must be exactly 8 digits without spaces/symbols"),
-  openingBalance: z.coerce.number().default(0),
+  openingBalance: z.coerce.number().min(0, "Opening balance cannot be negative").default(0),
 });
 type FormData = z.infer<typeof schema>;
 

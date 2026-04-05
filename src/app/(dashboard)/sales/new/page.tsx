@@ -8,12 +8,14 @@ import Input from "@/components/ui/Input";
 import SearchSelect from "@/components/ui/SearchSelect";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useSales } from "@/hooks/useSales";
-import { ICustomer, IItem, ISaleItem, ISelectOption, PaymentType } from "@/types";
+import { ICustomer, IItem, ISaleItem, ISelectOption, PaymentType, IBatch } from "@/types";
 import { formatCurrency, formatDateInput } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+
+import BatchSelectionModal from "@/components/sales/BatchSelectionModal";
 
 interface CartItem extends ISaleItem {
     _itemRef: IItem;
@@ -45,6 +47,9 @@ export default function NewSalePage() {
     const [date, setDate] = useState(formatDateInput(new Date()));
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    
+    // Batch selection state
+    const [batchSelectionItem, setBatchSelectionItem] = useState<IItem | null>(null);
 
     // load customers + items once
     useEffect(() => {
@@ -71,6 +76,41 @@ export default function NewSalePage() {
         data: i,
     }));
 
+    const handleBatchSelect = (batch: IBatch) => {
+        if (!batchSelectionItem) return;
+        
+        const item = batchSelectionItem;
+
+        const formatDateStr = (d: any): string => {
+            if (!d) return "";
+            try {
+                const dateObj = new Date(d);
+                if (isNaN(dateObj.getTime())) return "";
+                return dateObj.toISOString().split('T')[0] || "";
+            } catch { return ""; }
+        };
+        
+        // Final add to cart
+        const newItem: CartItem = {
+            itemId: item._id,
+            itemNumber: item.itemNumber,
+            itemName: item.name,
+            quantity: 1,
+            price: batch.salePrice || item.salesAmount || 0,
+            total: batch.salePrice || item.salesAmount || 0,
+            discount: 0,
+            isFOC: false,
+            manufacturingDate: formatDateStr(batch.manufacturingDate),
+            expiryDate: formatDateStr(batch.expiryDate),
+            batch: batch.batchNumber || "",
+            _itemRef: item,
+        };
+        setCart(prev => [...prev, newItem]);
+
+        setBatchSelectionItem(null);
+        toast.success(`Selected batch: ${batch.batchNumber || 'Oldest'}`);
+    };
+
     const addItem = useCallback(async (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
@@ -95,47 +135,72 @@ export default function NewSalePage() {
                 console.error("Error fetching last price:", error);
             }
         }
-        
-        // Helper to format date safely
+
         const formatDateStr = (d: any): string => {
             if (!d) return "";
             try {
                 const dateObj = new Date(d);
                 if (isNaN(dateObj.getTime())) return "";
-                const iso = dateObj.toISOString().split('T')[0];
-                return iso || "";
+                return dateObj.toISOString().split('T')[0] || "";
             } catch { return ""; }
         };
+        
+        // Trigger batch selection modal
+        if (item.batches && item.batches.length > 0) {
+            setBatchSelectionItem(item);
+        } else {
+            // No batches found, fall back to standard item data
+            const newItem: CartItem = {
+                itemId: item._id,
+                itemNumber: item.itemNumber,
+                itemName: item.name,
+                quantity: 1,
+                price: item.salesAmount || 0,
+                total: item.salesAmount || 0,
+                discount: 0,
+                isFOC: false,
+                manufacturingDate: formatDateStr(item.manufacturingDate),
+                expiryDate: formatDateStr(item.expiryDate),
+                batch: "",
+                _itemRef: item,
+            };
+            setCart(prev => [...prev, newItem]);
+        }
+    }, [selCustomer]);
 
-        setCart(prev => [...prev, {
-            itemId: item._id,
-            itemNumber: item.itemNumber,
-            itemName: item.name,
-            quantity: 1,
-            price: item.salesAmount || 0,
-            total: item.salesAmount || 0,
-            discount: 0,
-            isFOC: false,
-            manufacturingDate: formatDateStr(item.manufacturingDate) as string,
-            expiryDate: formatDateStr(item.expiryDate) as string,
-            batch: "",
-            _itemRef: item,
-        }]);
-    }, [selCustomer, cart]);
-
-    const updateItem = (idx: number, updates: Partial<CartItem>) => {
+    const updateItem = (idx: number, updates: any) => {
         setCart(prev => prev.map((c, i) => {
             if (i !== idx) return c;
             const updated = { ...c, ...updates };
-            // Ensure qty >= 1
-            if (updated.quantity < 1) updated.quantity = 1;
+            
+            const q = updated.quantity === "" ? 0 : Number(updated.quantity);
+            const p = updated.price === "" ? 0 : Number(updated.price);
+            const d = updated.discount === "" ? 0 : Number(updated.discount);
 
-            // FOC Logic: If FOC, total is always 0
+            // Prevent negative
+            if (q < 0) { updated.quantity = 0; }
+            if (p < 0) { updated.price = 0; }
+            if (d < 0) { updated.discount = 0; }
+            if (updated.total !== "" && Number(updated.total) < 0) { updated.total = 0; }
+
             if (updated.isFOC) {
                 updated.total = 0;
+                updated.price = 0;
+                updated.discount = 0;
             } else {
-                // Recalculate total: (price * qty) - discount
-                updated.total = (updated.price * updated.quantity) - (updated.discount || 0);
+                if ('quantity' in updates || 'price' in updates || 'discount' in updates) {
+                    const newQ = updated.quantity === "" ? 0 : Number(updated.quantity);
+                    const newP = updated.price === "" ? 0 : Number(updated.price);
+                    const newD = updated.discount === "" ? 0 : Number(updated.discount);
+                    updated.total = Number(((newQ * newP) - newD).toFixed(3));
+                } else if ('total' in updates) {
+                    const newT = updated.total === "" ? 0 : Number(updated.total);
+                    const currentQ = updated.quantity === "" ? 0 : Number(updated.quantity);
+                    const currentD = updated.discount === "" ? 0 : Number(updated.discount);
+                    if (currentQ > 0) {
+                        updated.price = Number(((newT + currentD) / currentQ).toFixed(3));
+                    }
+                }
             }
             return updated;
         }));
@@ -270,7 +335,14 @@ export default function NewSalePage() {
                         </div>
                     </div>
                     <Input label="Global Tax (%)" type="number" min={0} max={100} value={tax}
-                        onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))}
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val === "") setTax("" as any);
+                            else {
+                                const n = Number(val);
+                                setTax(n < 0 ? 0 : n);
+                            }
+                        }}
                         placeholder="0"
                         hint="Applied to total after discounts" />
                 </div>
@@ -314,8 +386,8 @@ export default function NewSalePage() {
                                                 type="text"
                                                 placeholder="Batch"
                                                 value={c.batch}
-                                                onChange={e => updateItem(idx, { batch: e.target.value })}
-                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                                readOnly
+                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
                                             />
                                         </td>
                                         <td className="td">
@@ -343,8 +415,8 @@ export default function NewSalePage() {
                                                     <Minus size={14} />
                                                 </button>
                                                 <input
-                                                    type="number" min={1} max={c._itemRef.quantity} value={c.quantity}
-                                                    onChange={e => updateItem(idx, { quantity: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                                                    type="number" value={c.quantity}
+                                                    onChange={e => updateItem(idx, { quantity: e.target.value })}
                                                     className="w-12 text-center bg-transparent text-sm font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
                                                 <button 
@@ -357,15 +429,24 @@ export default function NewSalePage() {
                                             </div>
                                             <div className="text-[10px] text-center text-gray-400 mt-1">Stock: {c._itemRef.quantity}</div>
                                         </td>
-                                        <td className="td text-right font-medium text-gray-700">{c.isFOC ? "—" : formatCurrency(c.price)}</td>
+                                        <td className="td">
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                disabled={c.isFOC}
+                                                value={c.price}
+                                                onChange={e => updateItem(idx, { price: e.target.value })}
+                                                className={`w-20 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${c.isFOC ? 'bg-gray-50 opacity-50 cursor-not-allowed' : ''}`}
+                                            />
+                                        </td>
                                         <td className="td">
                                             <input
                                                 type="number"
                                                 step="0.001"
                                                 placeholder="0.000"
                                                 disabled={c.isFOC}
-                                                value={c.discount || ''}
-                                                onChange={e => updateItem(idx, { discount: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                                                value={c.discount}
+                                                onChange={e => updateItem(idx, { discount: e.target.value })}
                                                 className={`w-20 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${c.isFOC ? 'bg-gray-50 opacity-50 cursor-not-allowed' : ''}`}
                                             />
                                         </td>
@@ -377,7 +458,15 @@ export default function NewSalePage() {
                                                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                             />
                                         </td>
-                                        <td className="td text-right font-bold text-gray-900">{c.isFOC ? <span className="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded text-[10px] uppercase tracking-wider">FREE</span> : formatCurrency(c.total)}</td>
+                                        <td className="td text-right">
+                                            {c.isFOC ? (
+                                                <span className="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded text-[10px] uppercase tracking-wider">FREE</span>
+                                            ) : (
+                                                <input type="number" step="0.01" value={c.total}
+                                                    onChange={e => updateItem(idx, { total: e.target.value })}
+                                                    className="w-24 px-2 py-1.5 text-xs text-right font-bold text-gray-900 border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block" />
+                                            )}
+                                        </td>
                                         <td className="td">
                                             <div className="flex gap-1">
                                                 <button
@@ -469,6 +558,13 @@ export default function NewSalePage() {
                 confirmLabel="Confirm & Save"
                 variant="info"
                 loading={saving}
+            />
+
+            <BatchSelectionModal
+                open={!!batchSelectionItem}
+                onClose={() => setBatchSelectionItem(null)}
+                item={batchSelectionItem}
+                onSelect={handleBatchSelect}
             />
         </div>
     );

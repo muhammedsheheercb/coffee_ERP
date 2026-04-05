@@ -27,6 +27,18 @@ export interface IUser {
 }
 
 // ─── Item ───────────────────────────────────────────
+export interface IBatch {
+  purchaseId?: string;
+  purchaseNumber?: string;
+  batchNumber?: string;
+  manufacturingDate?: string;
+  expiryDate?: string;
+  purchasePrice: number;
+  salePrice: number;
+  quantity: number;
+  createdAt: Date;
+}
+
 export interface IItem {
   _id: string;
   itemNumber: string;
@@ -39,6 +51,7 @@ export interface IItem {
   expiryDate?: string;
   supplierRef?: string;
   supplierName?: string;
+  batches?: IBatch[];
   createdAt: Date;
   updatedAt: Date;
 }

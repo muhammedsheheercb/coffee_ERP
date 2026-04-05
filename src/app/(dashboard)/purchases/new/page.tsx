@@ -69,6 +69,13 @@ export default function NewPurchasePage() {
         data: i,
     }));
 
+    const generateBatchNumber = () => {
+        const now = new Date();
+        const datePart = (now as any).toISOString()?.split('T')[0]?.replace(/-/g, '') || '00000000';
+        const randomPart = Math.floor(1000 + Math.random() * 9000);
+        return `BAT-${datePart}-${randomPart}`;
+    };
+
     const addItem = (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
@@ -83,17 +90,41 @@ export default function NewPurchasePage() {
             total: (item.purchaseAmount || 0),
             manufacturingDate: item.manufacturingDate ? formatDateInput(item.manufacturingDate) : "",
             expiryDate: item.expiryDate ? formatDateInput(item.expiryDate) : "",
-            batch: "",
+            batch: generateBatchNumber(),
             _itemRef: item,
         }]);
     };
 
-    const updateItem = (idx: number, updates: Partial<CartItem>) => {
+    const updateItem = (idx: number, updates: any) => {
         setCart(prev => prev.map((c, i) => {
             if (i !== idx) return c;
             const updated = { ...c, ...updates };
-            if (updated.quantity < 1) updated.quantity = 1;
-            updated.total = updated.price * updated.quantity;
+            
+            // Allow empty string for quantity/price temporarily for better typing experience
+            const q = (updated.quantity as any) === "" ? 0 : Number(updated.quantity);
+            const p = (updated.price as any) === "" ? 0 : Number(updated.price);
+            
+            // Prevent negative numbers
+            if (q < 0) { updated.quantity = 0; }
+            if (p < 0) { updated.price = 0; }
+            if ((updated.sellingPrice as any) !== "" && Number(updated.sellingPrice) < 0) { updated.sellingPrice = 0; }
+            if ((updated.total as any) !== "" && Number(updated.total) < 0) { updated.total = 0; }
+
+            // Recalculate total if quantity or price changed
+            if ('quantity' in updates || 'price' in updates) {
+                const newQ = (updates.quantity as any) === "" ? 0 : Number(updated.quantity);
+                const newP = (updates.price as any) === "" ? 0 : Number(updated.price);
+                updated.total = Number((newQ * newP).toFixed(3));
+            } 
+            // If total (amount) changed, recalculate price
+            else if ('total' in updates) {
+                const t = (updates.total as any) === "" ? 0 : Number(updates.total);
+                const currentQ = (updated.quantity as any) === "" ? 0 : Number(updated.quantity);
+                if (currentQ > 0) {
+                    updated.price = Number((t / currentQ).toFixed(3));
+                }
+            }
+            
             return updated;
         }));
     };
@@ -227,7 +258,14 @@ export default function NewPurchasePage() {
                         </div>
                     </div>
                     <Input label="Tax (%)" type="number" min={0} max={100} value={tax}
-                        onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))}
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (val === "") setTax("" as any);
+                            else {
+                                const n = Number(val);
+                                setTax(n < 0 ? 0 : n);
+                            }
+                        }}
                         placeholder="0"
                         hint="Enter purchase tax percentage" />
                 </div>
@@ -265,8 +303,9 @@ export default function NewPurchasePage() {
                                                 type="text"
                                                 placeholder="Batch"
                                                 value={c.batch}
-                                                onChange={e => updateItem(idx, { batch: e.target.value })}
-                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                                readOnly
+                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
+                                                title="Batch number is automatically generated"
                                             />
                                         </td>
                                         <td className="td">
@@ -296,8 +335,8 @@ export default function NewPurchasePage() {
                                                     <Minus size={14} />
                                                 </button>
                                                 <input
-                                                    type="number" min={1} value={c.quantity}
-                                                    onChange={e => updateItem(idx, { quantity: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                                                    type="number" value={c.quantity}
+                                                    onChange={e => updateItem(idx, { quantity: e.target.value })}
                                                     className="w-12 text-center bg-transparent text-sm font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
                                                 <button 
@@ -309,16 +348,20 @@ export default function NewPurchasePage() {
                                             </div>
                                         </td>
                                         <td className="td">
-                                            <input type="number" min={0} step="0.001" value={c.price}
-                                                onChange={e => updateItem(idx, { price: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                                            <input type="number" step="0.001" value={c.price}
+                                                onChange={e => updateItem(idx, { price: e.target.value })}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500 ml-auto block" />
                                         </td>
                                         <td className="td">
-                                            <input type="number" min={0} step="0.001" value={c.sellingPrice}
-                                                onChange={e => updateItem(idx, { sellingPrice: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
+                                            <input type="number" step="0.001" value={c.sellingPrice}
+                                                onChange={e => updateItem(idx, { sellingPrice: e.target.value })}
                                                 className={`w-24 px-2 py-1.5 text-xs text-right border rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block ${!c.sellingPrice ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
                                         </td>
-                                        <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
+                                        <td className="td text-right">
+                                            <input type="number" step="0.01" value={c.total}
+                                                onChange={e => updateItem(idx, { total: e.target.value })}
+                                                className="w-28 px-2 py-1.5 text-xs text-right font-bold text-gray-900 border border-gray-200 rounded-md focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 ml-auto block" />
+                                        </td>
                                         <td className="td">
                                             <Button variant="ghost" size="xs" icon={<Trash2 size={15} className="text-red-400 hover:text-red-600" />}
                                                 onClick={() => removeItem(idx)} />

@@ -13,7 +13,7 @@ import { generateSupplierID } from "@/lib/utils";
 const schema = z.object({
     supplierNumber: z.string().min(1, "Supplier number is required"),
     name: z.string().min(1, "Name is required"),
-    openingBalance: z.coerce.number().default(0),
+    openingBalance: z.coerce.number().min(0, "Opening balance cannot be negative").default(0),
 });
 type FormData = z.infer<typeof schema>;
 

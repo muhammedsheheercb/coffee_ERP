@@ -1,6 +1,6 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { Plus, Search, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+"use client"
+import React, { useEffect, useState, useCallback } from "react";
+import { Plus, Search, ArrowUpDown, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -27,6 +27,7 @@ export default function ItemsPage() {
     const [modalMode, setModalMode] = useState<"new" | "opening_stock">("new");
     const [editItem, setEditItem] = useState<IItem | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const { data: session } = useSession();
@@ -134,38 +135,90 @@ export default function ItemsPage() {
                         ) : items.length === 0 ? (
                             <tr><td colSpan={8} className="py-16 text-center text-gray-400 text-sm">No items found</td></tr>
                         ) : items.map((item: IItem) => (
-                            <tr key={item._id} className="tr-hover">
-                                <td className="td font-mono text-[10px] text-gray-400">{item.itemNumber}</td>
-                                <td className="td font-medium text-gray-800">{item.name}</td>
-                                <td className="td text-right">
-                                    <Badge
-                                        label={String(item.quantity)}
-                                        variant={item.quantity === 0 ? "danger" : item.quantity < 10 ? "warning" : "success"}
-                                    />
-                                </td>
-                                <td className="td text-right font-mono text-xs text-orange-600">{formatCurrency(item.purchaseAmount || 0)}</td>
-                                <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
-                                <td className="td text-right text-[10px] text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}</td>
-                                <td className="td text-right text-[10px] text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "-"}</td>
-                                <td className="td text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                        {canEdit && (
+                            <React.Fragment key={item._id}>
+                                <tr className="tr-hover">
+                                    <td className="td font-mono text-[10px] text-gray-400">{item.itemNumber}</td>
+                                    <td className="td font-medium text-gray-800">{item.name}</td>
+                                    <td className="td text-right">
+                                        <Badge
+                                            label={String(item.quantity)}
+                                            variant={item.quantity === 0 ? "danger" : item.quantity < 10 ? "warning" : "success"}
+                                        />
+                                    </td>
+                                    <td className="td text-right font-mono text-xs text-orange-600">{formatCurrency(item.purchaseAmount || 0)}</td>
+                                    <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
+                                    <td className="td text-right text-[10px] text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}</td>
+                                    <td className="td text-right text-[10px] text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "-"}</td>
+                                    <td className="td text-right">
+                                        <div className="flex items-center justify-end gap-1">
                                             <Button
                                                 variant="ghost" size="xs"
-                                                icon={<Pencil size={14} />}
-                                                onClick={() => { setEditItem(item); setModalOpen(true); }}
+                                                title="View Batches"
+                                                icon={expandedItemId === item._id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                onClick={() => setExpandedItemId(expandedItemId === item._id ? null : item._id)}
                                             />
-                                        )}
-                                        {canDelete && (
-                                            <Button
-                                                variant="ghost" size="xs"
-                                                icon={<Trash2 size={14} className="text-red-500" />}
-                                                onClick={() => setDeleteId(item._id)}
-                                            />
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
+                                            {canEdit && (
+                                                <Button
+                                                    variant="ghost" size="xs"
+                                                    icon={<Pencil size={14} />}
+                                                    onClick={() => { setEditItem(item); setModalOpen(true); }}
+                                                />
+                                            )}
+                                            {canDelete && (
+                                                <Button
+                                                    variant="ghost" size="xs"
+                                                    icon={<Trash2 size={14} className="text-red-500" />}
+                                                    onClick={() => setDeleteId(item._id)}
+                                                />
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {expandedItemId === item._id && (
+                                    <tr className="bg-amber-50/30">
+                                        <td colSpan={8} className="p-4 border-t border-amber-100">
+                                            <div className="text-xs font-bold text-amber-800 mb-2 px-1 flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                                ITEM BATCH HISTORY
+                                            </div>
+                                            {item.batches && item.batches.length > 0 ? (
+                                                <div className="overflow-hidden rounded-lg border border-amber-100 bg-white">
+                                                    <table className="w-full text-[11px]">
+                                                        <thead className="bg-amber-50/50">
+                                                            <tr>
+                                                                <th className="px-3 py-2 text-left font-semibold text-amber-900 border-b border-amber-100">Purchase #</th>
+                                                                <th className="px-3 py-2 text-left font-semibold text-amber-900 border-b border-amber-100">Batch</th>
+                                                                <th className="px-3 py-2 text-right font-semibold text-amber-900 border-b border-amber-100">Qty</th>
+                                                                <th className="px-3 py-2 text-right font-semibold text-amber-900 border-b border-amber-100">Purchase Price</th>
+                                                                <th className="px-3 py-2 text-right font-semibold text-amber-900 border-b border-amber-100">Sales Price</th>
+                                                                <th className="px-3 py-2 text-center font-semibold text-amber-900 border-b border-amber-100">Mfg Date</th>
+                                                                <th className="px-3 py-2 text-center font-semibold text-amber-900 border-b border-amber-100">Exp Date</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-amber-50">
+                                                            {item.batches.map((batch, bi) => (
+                                                                <tr key={bi} className="hover:bg-amber-50/50 transition-colors">
+                                                                    <td className="px-3 py-2 font-mono text-gray-500">{batch.purchaseNumber || "-"}</td>
+                                                                    <td className="px-3 py-2">{batch.batchNumber || "-"}</td>
+                                                                    <td className="px-3 py-2 text-right font-bold text-amber-700">{batch.quantity}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatCurrency(batch.purchasePrice)}</td>
+                                                                    <td className="px-3 py-2 text-right font-semibold text-indigo-600">{formatCurrency(batch.salePrice)}</td>
+                                                                    <td className="px-3 py-2 text-center text-gray-500">{batch.manufacturingDate ? formatDate(batch.manufacturingDate) : "-"}</td>
+                                                                    <td className="px-3 py-2 text-center text-gray-500">{batch.expiryDate ? formatDate(batch.expiryDate) : "-"}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ) : (
+                                                <div className="py-4 text-center text-xs text-gray-400 italic">
+                                                    No historical batch data found for this item.
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                     </tbody>
                 </table>

@@ -10,6 +10,17 @@ export interface IItemDocument extends Document {
   expiryDate?: Date;
   supplierRef?: mongoose.Types.ObjectId;
   supplierName?: string;
+  batches?: {
+    purchaseId?: mongoose.Types.ObjectId;
+    purchaseNumber?: string;
+    batchNumber?: string;
+    manufacturingDate?: Date;
+    expiryDate?: Date;
+    purchasePrice: number;
+    salePrice: number;
+    quantity: number;
+    createdAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +64,19 @@ const ItemSchema = new Schema<IItemDocument>(
       type: String,
       trim: true,
     },
+    batches: [
+      {
+        purchaseId: { type: Schema.Types.ObjectId, ref: "Purchase" },
+        purchaseNumber: String,
+        batchNumber: String,
+        manufacturingDate: Date,
+        expiryDate: Date,
+        purchasePrice: Number,
+        salePrice: Number,
+        quantity: Number,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { 
     timestamps: true,

@@ -304,9 +304,11 @@ export default function SalesReturnsPage() {
                                                         max={item.originalQuantity}
                                                         value={item.returnQuantity}
                                                         onChange={(e) => {
-                                                            const val = (e.target.value === "" ? "" as any : parseInt(e.target.value)) || 0;
+                                                            const raw = e.target.value;
+                                                            const val = raw === "" ? 0 : parseInt(raw);
+                                                            const finalVal = Math.max(0, Math.min(val || 0, item.originalQuantity));
                                                             const newItems = [...returnItems];
-                                                            newItems[idx].returnQuantity = Math.min(val, item.originalQuantity);
+                                                            newItems[idx].returnQuantity = raw === "" ? "" : finalVal;
                                                             setReturnItems(newItems);
                                                         }}
                                                         className="w-16 px-2 py-1 border rounded text-center focus:ring-1 focus:ring-indigo-500 outline-none"

@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
 
     // 1 — create purchase
     const [purchase] = await Purchase.create([{ ...body, purchaseNumber }], { session: dbSession });
+    if (!purchase) throw new Error("Failed to create purchase record");
 
     // 2 — increase item quantities and update dates
     for (const purchaseItem of body.items) {
@@ -103,6 +104,19 @@ export async function POST(req: NextRequest) {
             salesAmount: purchaseItem.sellingPrice,
             manufacturingDate: purchaseItem.manufacturingDate,
             expiryDate: purchaseItem.expiryDate 
+          },
+          $push: {
+            batches: {
+              purchaseId: purchase._id,
+              purchaseNumber: purchase.purchaseNumber,
+              batchNumber: purchaseItem.batch,
+              manufacturingDate: purchaseItem.manufacturingDate,
+              expiryDate: purchaseItem.expiryDate,
+              purchasePrice: purchaseItem.price,
+              salePrice: purchaseItem.sellingPrice,
+              quantity: purchaseItem.quantity,
+              createdAt: new Date()
+            }
           }
         },
         { session: dbSession, new: true }

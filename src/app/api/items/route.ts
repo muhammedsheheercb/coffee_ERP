@@ -69,13 +69,27 @@ export async function POST(req: NextRequest) {
 
     const itemNumber = body.itemNumber || generateUniqueNumber("ITM");
 
-    const item = await Item.create({ 
+    const itemData = { 
       ...body, 
       itemNumber,
       salesAmount: body.salesAmount ?? 0,
       purchaseAmount: body.purchaseAmount ?? 0,
       quantity: body.quantity ?? 0,
-    });
+    };
+
+    if (itemData.quantity > 0) {
+      itemData.batches = [{
+        purchaseNumber: "OPENING",
+        manufacturingDate: body.manufacturingDate,
+        expiryDate: body.expiryDate,
+        purchasePrice: body.purchaseAmount ?? 0,
+        salePrice: body.salesAmount ?? 0,
+        quantity: body.quantity ?? 0,
+        createdAt: new Date()
+      }];
+    }
+
+    const item = await Item.create(itemData);
     return NextResponse.json({ success: true, data: item }, { status: 201 });
   } catch (err: unknown) {
     console.error("[POST /api/items]", err);
