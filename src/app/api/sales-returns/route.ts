@@ -61,12 +61,33 @@ export async function POST(req: Request) {
     await newReturn.save({ session: dbSession });
 
     // 2 — Reverse inventory
-    for (const item of body.items) {
-      await Item.findByIdAndUpdate(
-        item.itemId,
-        { $inc: { quantity: item.quantity } },
-        { session: dbSession }
-      );
+    for (const itemData of body.items) {
+      const item = await Item.findById(itemData.itemId).session(dbSession);
+      if (item) {
+        item.quantity = (item.quantity || 0) + itemData.quantity;
+        
+        let batchUpdated = false;
+        if (itemData.batch && item.batches && item.batches.length > 0) {
+          const batch = item.batches.find((b: any) => b.batchNumber === itemData.batch);
+          if (batch) {
+            batch.quantity += itemData.quantity;
+            batchUpdated = true;
+          }
+        }
+        
+        if (!batchUpdated) {
+          if (!item.batches) item.batches = [];
+          item.batches.push({
+            batchNumber: itemData.batch || `RET-${newReturn.returnNumber}`,
+            purchasePrice: itemData.price,
+            salePrice: itemData.price,
+            quantity: itemData.quantity,
+            createdAt: new Date()
+          } as any);
+        }
+        
+        await item.save({ session: dbSession });
+      }
     }
 
     // 3 — Update customer balance (Sales Return decreases customer's credit balance)

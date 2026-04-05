@@ -5,6 +5,7 @@ export interface IDamagedItem extends Document {
     itemName: string;
     itemId: string;
     quantity: number;
+    batch?: string;
     reason: string;
     date: Date;
     disposed: boolean;
@@ -17,6 +18,7 @@ const DamagedItemSchema = new Schema<IDamagedItem>({
     itemName: { type: String, required: true },
     itemId: { type: String, required: true, ref: "Item" },
     quantity: { type: Number, required: true },
+    batch: { type: String },
     reason: { type: String, required: true },
     date: { type: Date, default: Date.now },
     disposed: { type: Boolean, default: false },

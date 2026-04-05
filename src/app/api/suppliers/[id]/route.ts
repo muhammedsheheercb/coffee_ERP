@@ -74,10 +74,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
       const prevCredit = supplier.creditBalance || 0;
       
       const newCredit = adjustType === "add" ? prevCredit + amount : prevCredit - amount;
-      const newOpening = adjustType === "add" ? prevOpening + amount : prevOpening - amount;
 
       supplier.creditBalance = newCredit;
-      supplier.openingBalance = newOpening;
       
       if (!supplier.balanceHistory) supplier.balanceHistory = [];
       supplier.balanceHistory.push({

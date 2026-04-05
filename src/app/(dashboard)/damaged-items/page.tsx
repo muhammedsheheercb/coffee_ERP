@@ -29,9 +29,12 @@ export default function DamagedItemsPage() {
         itemNumber: "",
         itemName: "",
         quantity: 1,
+        batch: "",
         reason: "",
         date: new Date().toISOString().split('T')[0]
     });
+
+    const [selectedItemBatches, setSelectedItemBatches] = useState<any[]>([]);
 
     const [editingDamage, setEditingDamage] = useState<any | null>(null);
 
@@ -70,8 +73,10 @@ export default function DamagedItemsPage() {
             ...formData,
             itemId: item._id,
             itemNumber: item.itemNumber,
-            itemName: item.name
+            itemName: item.name,
+            batch: ""
         });
+        setSelectedItemBatches(item.batches || []);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -147,6 +152,7 @@ export default function DamagedItemsPage() {
                                     itemId: "",
                                     itemNumber: "",
                                     itemName: "",
+                                    batch: "",
                                     quantity: 1,
                                     reason: "",
                                     date: new Date().toISOString().split('T')[0]
@@ -207,6 +213,7 @@ export default function DamagedItemsPage() {
                                                             itemId: item.itemId,
                                                             itemNumber: item.itemNumber,
                                                             itemName: item.itemName,
+                                                            batch: item.batch || "",
                                                             quantity: item.quantity,
                                                             reason: item.reason,
                                                             date: item.date.split("T")[0]
@@ -263,13 +270,29 @@ export default function DamagedItemsPage() {
                         />
                     </div>
 
+                    {selectedItemBatches.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch (Optional)</label>
+                            <Select
+                                options={selectedItemBatches.filter(b => b.quantity > 0).map(b => ({ value: b.batchNumber, label: `${b.batchNumber || 'Unnamed'} (Qty: ${b.quantity})` }))}
+                                value={formData.batch ? { value: formData.batch, label: formData.batch } : null}
+                                onChange={(opt: any) => setFormData({ ...formData, batch: opt?.value || "" })}
+                                isClearable
+                                placeholder="Select a specific batch..."
+                            />
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="Quantity"
                             type="number"
                             min="1"
                             value={formData.quantity}
-                            onChange={(e) => setFormData({ ...formData, quantity: (e.target.value === "" ? "" as any : parseInt(e.target.value)) || 0 })}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData({ ...formData, quantity: val === "" ? "" as any : parseInt(val) });
+                            }}
                             required
                         />
                         <Input

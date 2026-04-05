@@ -5,6 +5,7 @@ export interface ISaleReturnItem {
     itemNumber: string;
     itemName: string;
     quantity: number;
+    batch?: string;
     price: number;
     total: number;
     reason: string;
@@ -27,6 +28,7 @@ const SaleReturnItemSchema = new Schema<ISaleReturnItem>({
     itemNumber: { type: String, required: true },
     itemName: { type: String, required: true },
     quantity: { type: Number, required: true },
+    batch: { type: String },
     price: { type: Number, required: true },
     total: { type: Number, required: true },
     reason: { type: String, required: true },

@@ -108,6 +108,9 @@ export async function POST(req: NextRequest) {
     for (const saleItem of body.items) {
       const item = await Item.findById(saleItem.itemId).session(dbSession);
       if (!item) throw new Error(`Item not found: ${saleItem.itemName}`);
+      if ((item.quantity || 0) < saleItem.quantity) {
+        throw new Error(`Insufficient stock for item: ${saleItem.itemName} (Available: ${item.quantity || 0}, Requested: ${saleItem.quantity})`);
+      }
 
       // Update total quantity
       item.quantity = (item.quantity || 0) - saleItem.quantity;

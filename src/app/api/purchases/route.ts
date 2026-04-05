@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
       await Supplier.findByIdAndUpdate(
         body.supplierId,
         { 
-          $inc: { creditBalance: body.total, openingBalance: body.total },
+          $inc: { creditBalance: body.total },
           $push: { 
             balanceHistory: {
               date: new Date(),

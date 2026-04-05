@@ -148,6 +148,7 @@ export default function SalesReturnsPage() {
                 itemNumber: item.itemNumber,
                 itemName: item.itemName,
                 quantity: item.returnQuantity,
+                batch: item.batch,
                 price: item.price,
                 total: item.price * item.returnQuantity,
                 reason: "Customer Return"
@@ -322,7 +323,7 @@ export default function SalesReturnsPage() {
                                             <tr key={idx}>
                                                 <td className="py-3 text-left">
                                                     <div className="font-medium text-gray-900">{item.itemName}</div>
-                                                    <div className="text-xs text-gray-500">{item.itemNumber}</div>
+                                                    <div className="text-xs text-gray-500">{item.itemNumber} {item.batch ? `(Batch: ${item.batch})` : ''}</div>
                                                 </td>
                                                 <td className="py-3 text-center">{item.originalQuantity}</td>
                                                 <td className="py-3 text-center">

@@ -59,12 +59,43 @@ export async function POST(req: Request) {
     });
     await newDamaged.save({ session: dbSession });
 
-    // 2 — Decrease inventory
-    await Item.findByIdAndUpdate(
-      body.itemId,
-      { $inc: { quantity: -body.quantity } },
-      { session: dbSession }
-    );
+    // 2 — Decrease inventory manually with FIFO for batches
+    const item = await Item.findById(body.itemId).session(dbSession);
+    if (!item) throw new Error("Item not found");
+
+    item.quantity = (item.quantity || 0) - body.quantity;
+    
+    if (item.batches && item.batches.length > 0) {
+      if (body.batch) {
+        const batch = item.batches.find((b: any) => b.batchNumber === body.batch);
+        if (batch) {
+          batch.quantity -= body.quantity;
+        } else {
+          // Fallback to FIFO
+          let remainingToDeduct = body.quantity;
+          item.batches.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          for (const b of item.batches) {
+            if (remainingToDeduct <= 0) break;
+            const deduct = Math.min(b.quantity, remainingToDeduct);
+            b.quantity -= deduct;
+            remainingToDeduct -= deduct;
+          }
+        }
+      } else {
+        // FIFO
+        let remainingToDeduct = body.quantity;
+        item.batches.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
+        for (const batch of item.batches) {
+          if (remainingToDeduct <= 0) break;
+          const deductFromThisBatch = Math.min(batch.quantity, remainingToDeduct);
+          batch.quantity -= deductFromThisBatch;
+          remainingToDeduct -= deductFromThisBatch;
+        }
+      }
+    }
+    
+    await item.save({ session: dbSession });
 
     await dbSession.commitTransaction();
     return NextResponse.json(newDamaged, { status: 201 });
