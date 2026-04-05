@@ -75,7 +75,7 @@ export default function DashboardPage() {
                         <label style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>Year</label>
                         <select
                             value={year}
-                            onChange={e => setYear(Number(e.target.value))}
+                            onChange={e => setYear((e.target.value === "" ? "" as any : Number(e.target.value)))}
                             style={{ border: "1px solid #d1d5db", borderRadius: "8px", padding: "6px 12px", fontSize: "13px", outline: "none", minWidth: "100px" }}
                         >
                             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -91,12 +91,11 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* KPI grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "16px" }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {kpiConfig.map(({ key, label, icon: Icon, color, bg }) => {
                             const val = kpi ? Number(kpi[key as keyof IKpiData]) : 0;
-                            const display = ["totalSales", "totalPurchases", "totalExpenses", "totalRevenue"].includes(key)
-                                ? formatCurrency(val)
-                                : String(val);
+                            const isCurrency = ["totalSales", "totalPurchases", "totalExpenses", "totalRevenue"].includes(key);
+                            const displayVal = isCurrency ? formatCurrency(val).replace("OMR", "").trim() : String(val);
                             
                             // Net Profit color logic
                             let displayColor = "#111827";
@@ -111,7 +110,14 @@ export default function DashboardPage() {
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{ fontSize: "12px", color: "#6b7280", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</p>
-                                        <p style={{ fontSize: "18px", fontWeight: 700, color: displayColor, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{display}</p>
+                                        <p style={{ fontSize: "18px", fontWeight: 700, color: displayColor, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: "4px" }}>
+                                            {isCurrency && (
+                                                <span style={{ display: "flex", alignItems: "center" }}>
+                                                    <img src="/images/money.webp" alt="Currency" style={{ width: "20px", height: "20px", objectFit: "contain" }} />
+                                                </span>
+                                            )}
+                                            {displayVal}
+                                        </p>
                                     </div>
                                 </div>
                             );

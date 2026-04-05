@@ -13,8 +13,8 @@ interface BalanceHistoryModalProps {
 export default function BalanceHistoryModal({ open, onClose, entityName, history }: BalanceHistoryModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={`Balance History: ${entityName}`} size="lg">
-      <div className="overflow-hidden bg-white rounded-lg border border-gray-200">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
+        <table className="w-full text-left min-w-[600px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>

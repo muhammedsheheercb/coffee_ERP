@@ -63,7 +63,7 @@ export default function SupplierModal({ open, onClose, onSubmit, supplier, loadi
             }
         >
             <form id="supplier-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input label="Supplier number" placeholder="SUP-001" required readOnly disabled error={errors.supplierNumber?.message} {...register("supplierNumber")} />
                     <Input label="Name" placeholder="Supplier name" required error={errors.name?.message}           {...register("name")} />
                 </div>

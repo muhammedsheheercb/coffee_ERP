@@ -46,7 +46,7 @@ export default function BalanceAdjustmentModal({
           {isSupplier ? 'Payment Mode: Subtracting from owed balance' : 'Payment Mode: Recording customer payment'}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Date"
             type="date"

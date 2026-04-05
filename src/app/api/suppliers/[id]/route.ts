@@ -87,15 +87,28 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: true, data: supplier });
     }
 
-    const updates = { ...body };
-    // DO NOT allow arbitrary overwriting of creditBalance via PUT /edit form anymore, 
-    // it should be done through adjustments.
-    if (body.openingBalance !== undefined) {
-       // Keep creditBalance unchanged if editing core profile info
+    const { creditBalance: _cb, balanceHistory: _bh, openingBalance, ...updates } = body;
+    
+    const supplier = await Supplier.findById(id);
+    if (!supplier) return NextResponse.json({ success: false, error: "Supplier not found" }, { status: 404 });
+
+    if (openingBalance !== undefined && openingBalance !== supplier.openingBalance) {
+      const diff = openingBalance - (supplier.openingBalance || 0);
+      supplier.openingBalance = openingBalance;
+      supplier.creditBalance = (supplier.creditBalance || 0) + diff;
+      
+      if (!supplier.balanceHistory) supplier.balanceHistory = [];
+      supplier.balanceHistory.push({
+        date: new Date(),
+        amount: Math.abs(diff),
+        type: "adjustment",
+        paymentMethod: "cash",
+        note: "Opening Balance Correction"
+      });
     }
 
-    const supplier = await Supplier.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).lean();
-    if (!supplier) return NextResponse.json({ success: false, error: "Supplier not found" }, { status: 404 });
+    Object.assign(supplier, updates);
+    await supplier.save();
 
     return NextResponse.json({ success: true, data: supplier });
   } catch (err: unknown) {

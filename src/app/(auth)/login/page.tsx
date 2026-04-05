@@ -601,7 +601,7 @@ export default function LoginPage() {
                 letterSpacing: "-0.02em",
               }}
             >
-              ☕ <span style={{ color: "#c87941" }}>Brew & Sell</span>
+              ☕ <span style={{ color: "#c87941" }}>CAFE DIRECT</span>
             </h2>
             <p
               style={{
@@ -748,6 +748,7 @@ export default function LoginPage() {
               ☕ Coffee Sales Portal
             </p>
             <h1
+              className="md:hidden"
               style={{
                 margin: "0 0 6px",
                 fontSize: 30,

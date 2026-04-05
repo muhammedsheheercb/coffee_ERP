@@ -104,7 +104,7 @@ export default function EditExpensePage() {
                         min={0}
                         step="0.001"
                         value={form.amount}
-                        onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
+                        onChange={e => setForm({ ...form, amount: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                         required
                         leftIcon={<CreditCard size={16} />}
                     />

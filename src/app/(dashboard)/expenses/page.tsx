@@ -115,7 +115,7 @@ export default function ExpensesPage() {
                         <p className="text-2xl font-black text-red-600 tabular-nums">{formatCurrency(totalAmount)}</p>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-end justify-center">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start justify-center">
                     <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1 flex items-center gap-1.5 line-clamp-1">
                         <FileText size={10} /> Records Count
                     </p>

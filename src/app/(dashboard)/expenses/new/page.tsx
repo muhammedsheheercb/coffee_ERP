@@ -65,7 +65,7 @@ export default function NewExpensePage() {
                     leftIcon={<FileText size={16} />}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* amount */}
                     <Input
                         label="Amount (OMR)"
@@ -73,7 +73,7 @@ export default function NewExpensePage() {
                         min={0}
                         step="0.001"
                         value={form.amount}
-                        onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
+                        onChange={e => setForm({ ...form, amount: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                         required
                         leftIcon={<CreditCard size={16} />}
                     />
@@ -87,7 +87,7 @@ export default function NewExpensePage() {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* category */}
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1 flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function NewExpensePage() {
                     {/* payment type */}
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment via</label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             {(["cash", "bank", "credit"] as PaymentType[]).map(t => (
                                 <button
                                     key={t}
@@ -142,10 +142,10 @@ export default function NewExpensePage() {
                 </div>
 
                 {/* actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
                     <Button type="button" variant="outline" onClick={() => router.push("/expenses")}>Cancel</Button>
                     <Button type="submit" loading={saving} icon={<Save size={16} />} 
-                        className="bg-red-600 hover:bg-red-700 border-red-600 text-white">Record Expense</Button>
+                        className="bg-red-600 hover:bg-red-700 border-red-600 text-white w-full sm:w-auto">Record Expense</Button>
                 </div>
             </form>
         </div>

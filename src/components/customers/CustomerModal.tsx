@@ -13,7 +13,7 @@ import { generateCustomerID } from "@/lib/utils";
 const schema = z.object({
   customerNumber: z.string().min(1, "Customer number is required"),
   name: z.string().min(1, "Name is required"),
-  mobile: z.string().min(10, "Enter a valid mobile number"),
+  mobile: z.string().regex(/^\d{8}$/, "Mobile must be exactly 8 digits without spaces/symbols"),
   openingBalance: z.coerce.number().default(0),
 });
 type FormData = z.infer<typeof schema>;
@@ -51,7 +51,7 @@ export default function CustomerModal({
               customerNumber: customer.customerNumber,
               name: customer.name,
               mobile: customer.mobile,
-              openingBalance: customer.creditBalance || 0,
+              openingBalance: customer.openingBalance || 0,
             }
           : { 
               customerNumber: generateCustomerID(), 
@@ -84,7 +84,7 @@ export default function CustomerModal({
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4"
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Customer number"
             placeholder="CUST-001"
@@ -102,7 +102,7 @@ export default function CustomerModal({
             {...register("name")}
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Mobile number"
             placeholder="9876543210"

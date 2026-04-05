@@ -239,7 +239,7 @@ export default function NewSalePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1.5">Payment Method <span className="text-red-500">*</span></label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <button 
                               type="button" 
                               onClick={() => setPaymentType("cash")} 
@@ -270,7 +270,7 @@ export default function NewSalePage() {
                         </div>
                     </div>
                     <Input label="Global Tax (%)" type="number" min={0} max={100} value={tax}
-                        onChange={e => setTax(Number(e.target.value))}
+                        onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))}
                         placeholder="0"
                         hint="Applied to total after discounts" />
                 </div>
@@ -344,7 +344,7 @@ export default function NewSalePage() {
                                                 </button>
                                                 <input
                                                     type="number" min={1} max={c._itemRef.quantity} value={c.quantity}
-                                                    onChange={e => updateItem(idx, { quantity: Number(e.target.value) })}
+                                                    onChange={e => updateItem(idx, { quantity: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                                                     className="w-12 text-center bg-transparent text-sm font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
                                                 <button 
@@ -365,7 +365,7 @@ export default function NewSalePage() {
                                                 placeholder="0.000"
                                                 disabled={c.isFOC}
                                                 value={c.discount || ''}
-                                                onChange={e => updateItem(idx, { discount: Number(e.target.value) })}
+                                                onChange={e => updateItem(idx, { discount: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                                                 className={`w-20 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${c.isFOC ? 'bg-gray-50 opacity-50 cursor-not-allowed' : ''}`}
                                             />
                                         </td>
@@ -438,21 +438,21 @@ export default function NewSalePage() {
                     </div>
                 )}
 
-                <div className="flex justify-between items-center pt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
                     <Button variant="outline" icon={<FileDown size={18} />} onClick={generatePDF}
                         disabled={!selCustomer || cart.length === 0}
-                        className="px-6"
+                        className="px-6 w-full sm:w-auto"
                     >
                         Export Invoice
                     </Button>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 items-center">
                         <button onClick={() => router.push("/sales")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline">
                             Discard
                         </button>
                         <Button
                             onClick={() => setConfirmOpen(true)}
                             disabled={!selCustomer || cart.length === 0}
-                            className="px-10 h-11"
+                            className="px-10 h-11 w-full sm:w-auto"
                         >
                             Complete Order
                         </Button>

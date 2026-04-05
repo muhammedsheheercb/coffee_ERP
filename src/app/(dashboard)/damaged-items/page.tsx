@@ -152,7 +152,7 @@ export default function DamagedItemsPage() {
                     }
                 />
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
@@ -236,13 +236,13 @@ export default function DamagedItemsPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="Quantity"
                             type="number"
                             min="1"
                             value={formData.quantity}
-                            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => setFormData({ ...formData, quantity: (e.target.value === "" ? "" as any : parseInt(e.target.value)) || 0 })}
                             required
                         />
                         <Input

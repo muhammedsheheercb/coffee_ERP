@@ -23,8 +23,8 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
   return (
     <Modal open={open} onClose={onClose} title={`Financial Record: ${entityName}`} size="lg">
       <div className="flex flex-col gap-4">
-        <div className="overflow-hidden bg-white ring-1 ring-gray-100 rounded-2xl shadow-sm">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto bg-white ring-1 ring-gray-100 rounded-2xl shadow-sm">
+          <table className="w-full text-left min-w-[600px]">
             <thead className="bg-gray-50/80 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Transaction Date</th>

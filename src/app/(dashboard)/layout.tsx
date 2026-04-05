@@ -19,23 +19,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!session && status !== "loading") return null;
 
     return (
-        <div
-            style={{
-                display: "flex",
-                height: "100vh",
-                overflow: "hidden",
-                backgroundColor: "#f9fafb",
-                fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-            }}
-        >
+        <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-gray-50 font-sans">
             <Sidebar />
-            <main
-                style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    padding: "24px",
-                }}
-            >
+            <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 w-full min-w-0">
                 {children}
             </main>
         </div>

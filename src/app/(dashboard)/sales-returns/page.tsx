@@ -192,7 +192,7 @@ export default function SalesReturnsPage() {
                     }
                 />
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
@@ -278,8 +278,8 @@ export default function SalesReturnsPage() {
                                 </div>
                             </div>
 
-                            <div className="overflow-y-auto max-h-[400px]">
-                                <table className="w-full text-sm">
+                            <div className="overflow-auto max-h-[400px] w-full border border-gray-100 rounded-lg">
+                                <table className="w-full text-sm min-w-[500px]">
                                     <thead className="text-gray-500 border-b sticky top-0 bg-white">
                                         <tr>
                                             <th className="py-2 font-medium text-left">Item</th>
@@ -304,7 +304,7 @@ export default function SalesReturnsPage() {
                                                         max={item.originalQuantity}
                                                         value={item.returnQuantity}
                                                         onChange={(e) => {
-                                                            const val = parseInt(e.target.value) || 0;
+                                                            const val = (e.target.value === "" ? "" as any : parseInt(e.target.value)) || 0;
                                                             const newItems = [...returnItems];
                                                             newItems[idx].returnQuantity = Math.min(val, item.originalQuantity);
                                                             setReturnItems(newItems);
@@ -322,8 +322,8 @@ export default function SalesReturnsPage() {
                                 </table>
                             </div>
 
-                            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200 mt-auto">
-                                <span className="font-semibold text-gray-700">Total Return Amount:</span>
+                            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center bg-gray-50 p-4 rounded-xl border border-gray-200 mt-auto gap-2">
+                                <span className="font-semibold text-gray-700 text-center sm:text-left text-sm sm:text-base">Total Return Amount:</span>
                                 <span className="text-xl font-bold text-red-600">
                                     {formatCurrency(returnItems.reduce((sum, item) => sum + (item.price * (item.returnQuantity || 0)), 0))}
                                 </span>

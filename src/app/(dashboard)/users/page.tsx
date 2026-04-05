@@ -146,7 +146,7 @@ export default function UsersPage() {
                     }
                 />
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
@@ -298,7 +298,7 @@ export default function UsersPage() {
                                                 className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer ml-2"
                                             />
                                         </div>
-                                        <div className="flex gap-6">
+                                        <div className="flex flex-wrap gap-4 sm:gap-6 mt-2 md:mt-0">
                                             {["view", "create", "edit", "delete"].map((action) => (
                                                 <label key={action} className="flex items-center gap-2 cursor-pointer group/item">
                                                     <input

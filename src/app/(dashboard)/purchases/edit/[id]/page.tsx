@@ -167,10 +167,10 @@ export default function EditPurchasePage() {
                     <Input label="Date" type="date" value={date} onChange={e => setDate(e.target.value)} required />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment type</label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             {(["cash", "credit", "debit"] as PaymentType[]).map(t => (
                                 <button key={t} onClick={() => setPaymentType(t)}
                                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize
@@ -180,7 +180,7 @@ export default function EditPurchasePage() {
                             ))}
                         </div>
                     </div>
-                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} onChange={e => setTax(Number(e.target.value))} />
+                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))} />
                 </div>
 
                 <div>
@@ -212,12 +212,12 @@ export default function EditPurchasePage() {
                                         </td>
                                         <td className="td text-right">
                                             <input type="number" min={0} step="0.001" value={c.price}
-                                                onChange={e => updatePrice(idx, Number(e.target.value))}
+                                                onChange={e => updatePrice(idx, (e.target.value === "" ? "" as any : Number(e.target.value)))}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500 ml-auto block" />
                                         </td>
                                         <td className="td text-right">
                                             <input type="number" min={0} step="0.001" value={c.sellingPrice}
-                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, sellingPrice: Number(e.target.value) } : item))}
+                                                onChange={e => setCart(prev => prev.map((item, i) => i === idx ? { ...item, sellingPrice: (e.target.value === "" ? "" as any : Number(e.target.value)) } : item))}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block" />
                                         </td>
                                         <td className="td text-center">
@@ -232,7 +232,7 @@ export default function EditPurchasePage() {
                                         </td>
                                         <td className="td text-center">
                                             <input type="number" min={1} value={c.quantity}
-                                                onChange={e => updateQty(idx, Number(e.target.value))}
+                                                onChange={e => updateQty(idx, (e.target.value === "" ? "" as any : Number(e.target.value)))}
                                                 className="w-16 px-2 py-1.5 text-xs text-center border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 mx-auto block" />
                                         </td>
                                         <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
@@ -252,9 +252,9 @@ export default function EditPurchasePage() {
                     <div className="flex gap-8 text-lg font-bold text-amber-600"><span>Total</span><span>{formatCurrency(total)}</span></div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <Button variant="outline" onClick={() => router.push("/purchases")}>Cancel</Button>
-                    <Button onClick={() => setConfirmOpen(true)} loading={saving} icon={<Save size={16} />}>Update Purchase</Button>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+                    <Button variant="outline" onClick={() => router.push("/purchases")} className="w-full sm:w-auto">Cancel</Button>
+                    <Button onClick={() => setConfirmOpen(true)} loading={saving} icon={<Save size={16} />} className="w-full sm:w-auto">Update Purchase</Button>
                 </div>
             </div>
 

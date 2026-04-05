@@ -134,7 +134,7 @@ export default function Sidebar() {
             </nav>
 
             {/* user profile / logout */}
-            <div style={{ padding: "16px 12px 24px", borderTop: "1px solid #f3f4f6" }}>
+            <div className="logout-container" style={{ padding: "16px 12px 24px", borderTop: "1px solid #f3f4f6" }}>
                 <button onClick={() => signOut({ callbackUrl: "/login" })}
                     title={collapsed ? "Logout" : undefined}
                     style={{ 

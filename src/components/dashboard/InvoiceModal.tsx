@@ -124,8 +124,8 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                     </div>
 
                     {/* Items Table */}
-                    <div className="border border-gray-100 rounded-xl overflow-hidden">
-                        <table className="w-full text-left border-collapse">
+                    <div className="border border-gray-100 rounded-xl overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Item Details</th>

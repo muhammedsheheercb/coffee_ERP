@@ -84,9 +84,28 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: true, data: customer });
     }
 
-    const { creditBalance: _cb, balanceHistory: _bh, ...updates } = body;
-    const customer = await Customer.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).lean();
+    const { creditBalance: _cb, balanceHistory: _bh, openingBalance, ...updates } = body;
+    
+    const customer = await Customer.findById(id);
     if (!customer) return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+
+    if (openingBalance !== undefined && openingBalance !== customer.openingBalance) {
+      const diff = openingBalance - (customer.openingBalance || 0);
+      customer.openingBalance = openingBalance;
+      customer.creditBalance = (customer.creditBalance || 0) + diff;
+      
+      if (!customer.balanceHistory) customer.balanceHistory = [];
+      customer.balanceHistory.push({
+        date: new Date(),
+        amount: Math.abs(diff),
+        type: diff > 0 ? "adjustment" : "payment",
+        paymentMethod: "credit",
+        note: "Opening Balance Correction"
+      });
+    }
+
+    Object.assign(customer, updates);
+    await customer.save();
 
     return NextResponse.json({ success: true, data: customer });
   } catch (err: unknown) {

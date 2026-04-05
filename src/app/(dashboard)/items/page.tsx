@@ -24,6 +24,7 @@ export default function ItemsPage() {
     const [sortBy, setSortBy] = useState("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<"new" | "opening_stock">("new");
     const [editItem, setEditItem] = useState<IItem | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -77,22 +78,27 @@ export default function ItemsPage() {
                 subtitle={`${total} items total`}
                 actions={
                     canCreate && (
-                        <Button icon={<Plus size={16} />} onClick={() => { setEditItem(null); setModalOpen(true); }}>
-                            New Item
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" icon={<Plus size={16} />} onClick={() => { setModalMode("new"); setEditItem(null); setModalOpen(true); }}>
+                                New Item
+                            </Button>
+                            <Button icon={<Plus size={16} />} onClick={() => { setModalMode("opening_stock"); setEditItem(null); setModalOpen(true); }}>
+                                Opening Stock
+                            </Button>
+                        </div>
                     )
                 }
             />
 
             {/* summary box */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1">Total Items</p>
-                    <p className="text-2xl font-bold text-gray-800">{total}</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-white p-2 sm:p-4 rounded-xl shadow-sm border border-gray-100">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1">Total Items</p>
+                    <p className="text-base sm:text-2xl font-bold text-gray-800">{total}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1">Total Stock Value</p>
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                <div className="bg-white p-2 sm:p-4 rounded-xl shadow-sm border border-gray-100 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1">Total Stock</p>
+                    <p className="text-base sm:text-2xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
                 </div>
             </div>
 
@@ -115,10 +121,10 @@ export default function ItemsPage() {
                             <th className="th">Item Number <SortBtn col="itemNumber" /></th>
                             <th className="th">Item Name <SortBtn col="name" /></th>
                             <th className="th text-right">Qty <SortBtn col="quantity" /></th>
-                            <th className="th text-right">Purchase Amount <SortBtn col="purchaseAmount" /></th>
-                            <th className="th text-right">Sales Amount <SortBtn col="salesAmount" /></th>
-                            <th className="th text-right">Stock Value</th>
-                            <th className="th text-right tabular-nums">Creating Date <SortBtn col="createdAt" /></th>
+                            <th className="th text-right">Purchase Price <SortBtn col="purchaseAmount" /></th>
+                            <th className="th text-right">Sales Price <SortBtn col="salesAmount" /></th>
+                            <th className="th text-right">Mfg Date <SortBtn col="manufacturingDate" /></th>
+                            <th className="th text-right">Exp Date <SortBtn col="expiryDate" /></th>
                             <th className="th text-right">Actions</th>
                         </tr>
                     </thead>
@@ -137,10 +143,10 @@ export default function ItemsPage() {
                                         variant={item.quantity === 0 ? "danger" : item.quantity < 10 ? "warning" : "success"}
                                     />
                                 </td>
-                                <td className="td text-right font-mono text-xs">{formatCurrency(item.purchaseAmount || 0)}</td>
+                                <td className="td text-right font-mono text-xs text-orange-600">{formatCurrency(item.purchaseAmount || 0)}</td>
                                 <td className="td text-right font-mono text-xs text-indigo-600">{formatCurrency(item.salesAmount || 0)}</td>
-                                <td className="td text-right font-bold text-primary tracking-tight">{formatCurrency((item.purchaseAmount || 0) * item.quantity)}</td>
-                                <td className="td text-right text-gray-400 text-[10px]">{formatDate(item.createdAt)}</td>
+                                <td className="td text-right text-[10px] text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "-"}</td>
+                                <td className="td text-right text-[10px] text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "-"}</td>
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {canEdit && (
@@ -175,6 +181,7 @@ export default function ItemsPage() {
                 onSubmit={handleSubmit}
                 item={editItem}
                 loading={saving}
+                mode={modalMode}
             />
 
             <ConfirmModal

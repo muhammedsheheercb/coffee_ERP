@@ -196,7 +196,7 @@ export default function NewPurchasePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1.5">Payment Method <span className="text-red-500">*</span></label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <button 
                               type="button" 
                               onClick={() => setPaymentType("cash")} 
@@ -227,7 +227,7 @@ export default function NewPurchasePage() {
                         </div>
                     </div>
                     <Input label="Tax (%)" type="number" min={0} max={100} value={tax}
-                        onChange={e => setTax(Number(e.target.value))}
+                        onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))}
                         placeholder="0"
                         hint="Enter purchase tax percentage" />
                 </div>
@@ -297,7 +297,7 @@ export default function NewPurchasePage() {
                                                 </button>
                                                 <input
                                                     type="number" min={1} value={c.quantity}
-                                                    onChange={e => updateItem(idx, { quantity: Number(e.target.value) })}
+                                                    onChange={e => updateItem(idx, { quantity: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                                                     className="w-12 text-center bg-transparent text-sm font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
                                                 <button 
@@ -310,12 +310,12 @@ export default function NewPurchasePage() {
                                         </td>
                                         <td className="td">
                                             <input type="number" min={0} step="0.001" value={c.price}
-                                                onChange={e => updateItem(idx, { price: Number(e.target.value) })}
+                                                onChange={e => updateItem(idx, { price: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                                                 className="w-24 px-2 py-1.5 text-xs text-right border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500 ml-auto block" />
                                         </td>
                                         <td className="td">
                                             <input type="number" min={0} step="0.001" value={c.sellingPrice}
-                                                onChange={e => updateItem(idx, { sellingPrice: Number(e.target.value) })}
+                                                onChange={e => updateItem(idx, { sellingPrice: (e.target.value === "" ? "" as any : Number(e.target.value)) })}
                                                 className={`w-24 px-2 py-1.5 text-xs text-right border rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ml-auto block ${!c.sellingPrice ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
                                         </td>
                                         <td className="td text-right font-bold text-gray-900">{formatCurrency(c.total)}</td>
@@ -353,18 +353,18 @@ export default function NewPurchasePage() {
                     </div>
                 )}
 
-                <div className="flex justify-between items-center pt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
                     <Button variant="outline" icon={<FileDown size={18} />} onClick={generatePDF}
                         disabled={!selSupplier || cart.length === 0}
-                        className="px-6"
+                        className="px-6 w-full sm:w-auto"
                     >
                         Export Purchase Doc
                     </Button>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 items-center">
                         <button onClick={() => router.push("/purchases")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline">
                             Discard
                         </button>
-                        <Button onClick={() => setConfirmOpen(true)} disabled={!selSupplier || cart.length === 0} className="px-10 h-11">
+                        <Button onClick={() => setConfirmOpen(true)} disabled={!selSupplier || cart.length === 0} className="px-10 h-11 w-full sm:w-auto">
                             Complete Purchase
                         </Button>
                     </div>

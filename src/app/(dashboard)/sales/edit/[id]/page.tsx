@@ -193,10 +193,10 @@ export default function EditSalePage() {
                     <Input label="Date" type="date" value={date} onChange={e => setDate(e.target.value)} required />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment type</label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             {(["cash", "credit", "debit"] as PaymentType[]).map(t => (
                                 <button key={t} onClick={() => setPaymentType(t)}
                                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize
@@ -206,7 +206,7 @@ export default function EditSalePage() {
                             ))}
                         </div>
                     </div>
-                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} onChange={e => setTax(Number(e.target.value))} />
+                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} onChange={e => setTax((e.target.value === "" ? "" as any : Number(e.target.value)))} />
                 </div>
 
                 <div>
@@ -254,7 +254,7 @@ export default function EditSalePage() {
                                         </td>
                                         <td className="td text-right text-gray-600">{c.isFOC ? "—" : formatCurrency(c.price)}</td>
                                         <td className="td text-center">
-                                            <input type="number" value={c.quantity} onChange={e => updateItem(idx, { quantity: Number(e.target.value) })} className="w-16 px-1 py-1 text-center border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500 mx-auto block" />
+                                            <input type="number" value={c.quantity} onChange={e => updateItem(idx, { quantity: (e.target.value === "" ? "" as any : Number(e.target.value)) })} className="w-16 px-1 py-1 text-center border border-gray-200 rounded focus:ring-1 focus:ring-emerald-500 mx-auto block" />
                                         </td>
                                         <td className="td text-center">
                                             <input
@@ -302,9 +302,9 @@ export default function EditSalePage() {
                     <div className="flex gap-10 text-lg font-bold text-gray-800 border-t border-gray-100 pt-2 mt-2"><span>Grand Total</span><span className="text-emerald-600">{formatCurrency(total)}</span></div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <Button variant="outline" onClick={() => router.push("/sales")}>Cancel</Button>
-                    <Button onClick={() => setConfirmOpen(true)} loading={saving} icon={<Save size={16} />} className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600">Update Sale</Button>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
+                    <Button variant="outline" onClick={() => router.push("/sales")} className="w-full sm:w-auto">Cancel</Button>
+                    <Button onClick={() => setConfirmOpen(true)} loading={saving} icon={<Save size={16} />} className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 w-full sm:w-auto">Update Sale</Button>
                 </div>
             </div>
 

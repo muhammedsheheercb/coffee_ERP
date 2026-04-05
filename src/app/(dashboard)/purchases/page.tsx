@@ -83,7 +83,7 @@ export default function PurchasesPage() {
                 title="Purchases"
                 subtitle={`${total} records — Total: ${formatCurrency(totalAmount)}`}
                 actions={
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button 
                             variant="outline" 
                             icon={<Search size={16} />} 
@@ -110,11 +110,11 @@ export default function PurchasesPage() {
                         leftIcon={<Search size={15} />}
                         wrapperClassName="w-64"
                     />
-                    <select className="input-base w-32" value={month} onChange={e => setMonth(e.target.value ? Number(e.target.value) : "")}>
+                    <select className="input-base w-32" value={month} onChange={e => setMonth(e.target.value ? (e.target.value === "" ? "" as any : Number(e.target.value)) : "")}>
                         <option value="">All months</option>
                         {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                     </select>
-                    <select className="input-base w-28" value={year} onChange={e => setYear(Number(e.target.value))}>
+                    <select className="input-base w-28" value={year} onChange={e => setYear((e.target.value === "" ? "" as any : Number(e.target.value)))}>
                         {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                     
