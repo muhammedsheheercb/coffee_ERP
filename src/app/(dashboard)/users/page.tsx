@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { IUser, IUserPermissions, IActionPermission } from "@/types";
-import { 
-    Users, Mail, Shield, Plus, Edit2, Trash2, 
-    LayoutDashboard, Package, ShoppingCart, 
+import {
+    Users, Mail, Shield, Plus, Edit2, Trash2,
+    LayoutDashboard, Package, ShoppingCart,
     TruckIcon, Receipt, ReceiptText, Undo2, Ban, PieChart,
     Eye, EyeOff
 } from "lucide-react";
@@ -85,7 +85,15 @@ export default function UsersPage() {
         if (!formData.name.trim()) return toast.error("Name is required");
         if (!formData.email.includes("@")) return toast.error("Valid email is required");
         if (!editingUser && formData.password.length < 6) return toast.error("Password must be at least 6 characters");
-        
+
+        // Ensure at least one permission is selected
+        const hasAnyPermission = Object.values(formData.permissions).some(p => 
+            p.view || p.create || p.edit || p.delete
+        );
+        if (!hasAnyPermission) {
+            return toast.error("Please select at least one module permission");
+        }
+
         try {
             const url = editingUser ? `/api/users/${editingUser._id}` : "/api/users";
             const method = editingUser ? "PUT" : "POST";
@@ -249,18 +257,7 @@ export default function UsersPage() {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
-                        <div className="flex items-center gap-2 mt-8">
-                            <input
-                                type="checkbox"
-                                id="is_admin"
-                                checked={formData.role === "admin"}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.checked ? "admin" : "staff" })}
-                                className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <label htmlFor="is_admin" className="text-sm font-medium text-gray-700 cursor-pointer">
-                                Administrator access
-                            </label>
-                        </div>
+
                     </div>
 
                     <div className="border-t pt-6">
