@@ -57,7 +57,7 @@ export default function ExpiryAlertsPage() {
         <div className="page-container">
             <TopBar
                 title="Nearest Expiry Products"
-                subtitle="Items expiring within 5 days or already expired"
+                subtitle="Items expiring within 7 days or already expired"
             />
 
             <div className="table-wrapper mt-4 overflow-x-auto">
@@ -82,7 +82,7 @@ export default function ExpiryAlertsPage() {
                                         <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
                                             <AlertTriangle className="text-emerald-500" />
                                         </div>
-                                        <p>No products are expiring within the next 5 days.</p>
+                                        <p>No products are expiring within the next 7 days.</p>
                                     </div>
                                 </td>
                             </tr>

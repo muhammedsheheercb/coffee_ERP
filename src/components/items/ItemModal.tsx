@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import SearchSelect from "@/components/ui/SearchSelect";
 import { IItem } from "@/types";
 
 const schema = z.object({
@@ -98,12 +99,16 @@ export default function ItemModal({ open, onClose, onSubmit, item, loading, mode
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
-                        <label className="block text-sm font-medium text-gray-700">Select Existing Item</label>
-                        <select 
-                            className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            onChange={(e) => {
-                                const selected = existingItems.find((i: IItem) => i._id === e.target.value);
-                                if (selected) {
+                        <SearchSelect
+                            label="Select Existing Item"
+                            options={existingItems.map((i: IItem) => ({
+                                label: `${i.itemNumber} - ${i.name} (Available: ${i.quantity})`,
+                                value: i._id,
+                                data: i
+                            }))}
+                            onChange={(opt) => {
+                                if (opt && opt.data) {
+                                    const selected = opt.data as IItem;
                                     reset({
                                         itemId: selected._id,
                                         itemNumber: selected.itemNumber,
@@ -116,15 +121,22 @@ export default function ItemModal({ open, onClose, onSubmit, item, loading, mode
                                         batchNumber: `OPN-${Date.now().toString().slice(-6)}`,
                                         batchDate: new Date().toISOString().split('T')[0],
                                     });
+                                } else {
+                                    reset({
+                                      itemNumber: `ITM-${Date.now().toString().slice(-6)}`, 
+                                      name: "",
+                                      salesAmount: 0,
+                                      purchaseAmount: 0,
+                                      quantity: 0,
+                                      manufacturingDate: "",
+                                      expiryDate: "",
+                                      batchNumber: `OPN-${Date.now().toString().slice(-6)}`,
+                                      batchDate: new Date().toISOString().split('T')[0],
+                                    });
                                 }
                             }}
-                            defaultValue=""
-                        >
-                            <option value="" disabled>Select an item to update...</option>
-                            {existingItems.map((i: IItem) => (
-                                <option key={i._id} value={i._id}>{i.itemNumber} - {i.name} (Available: {i.quantity})</option>
-                            ))}
-                        </select>
+                            placeholder="Select an item to update..."
+                        />
                         {errors.itemNumber && <p className="text-sm text-red-500">{errors.itemNumber.message}</p>}
                     </div>
                 )}
@@ -133,9 +145,8 @@ export default function ItemModal({ open, onClose, onSubmit, item, loading, mode
                     <>
                         <div className="grid grid-cols-1 gap-4 pt-4 border-t border-gray-100">
                             <p className="text-sm font-semibold text-gray-700">Stock & Batch Details</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <Input label="Batch Number" required readOnly disabled error={errors.batchNumber?.message} {...register("batchNumber")} hint="Auto-generated opening batch" />
-                                <Input label="Opening Date (Created At)" type="date" required error={errors.batchDate?.message} {...register("batchDate")} />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-100">

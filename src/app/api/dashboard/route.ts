@@ -92,6 +92,7 @@ export async function GET(req: NextRequest) {
     const totalSales = rawSales - totalReturns; // Net Sales
     const cashSales = salesByPayment["cash"] || 0;
     const bankSales = salesByPayment["bank"] || 0;
+    const creditSales = salesByPayment["credit"] || 0;
     
     const purchasesByPayment = purchasesAgg.reduce((acc: any, curr: any) => {
       acc[curr._id] = curr.total;
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
     const totalPurchases = Object.values(purchasesByPayment).reduce((sum: any, val: any) => sum + val, 0) as number;
     const cashPurchases = purchasesByPayment["cash"] || 0;
     const bankPurchases = purchasesByPayment["bank"] || 0;
+    const creditPurchases = purchasesByPayment["credit"] || 0;
     const totalExpenses  = expensesAgg[0]?.total ?? 0;
     const totalRevenue   = totalSales - totalPurchases - totalExpenses;
     const totalReceivable = receivableAgg[0]?.total ?? 0;
@@ -154,7 +156,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers, totalReceivable, totalPayable, cashSales, bankSales, cashPurchases, bankPurchases },
+      kpi: { totalSales, totalPurchases, totalExpenses, totalRevenue, totalCustomers, totalItems, totalSuppliers, totalReceivable, totalPayable, cashSales, bankSales, creditSales, cashPurchases, bankPurchases, creditPurchases },
       chartData,
     });
   } catch (err) {

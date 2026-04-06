@@ -13,6 +13,7 @@ import { formatCurrency, formatDateInput } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 interface CartItem extends IPurchaseItem {
     _itemRef: IItem;
@@ -76,10 +77,31 @@ export default function NewPurchasePage() {
         return `BAT-${datePart}-${randomPart}`;
     };
 
-    const addItem = (opt: ISelectOption | null) => {
+    const addItem = async (opt: ISelectOption | null) => {
         if (!opt) return;
         const item = opt.data as IItem;
         if (cart.find(c => c.itemId === item._id)) return;
+
+        if (selSupplier) {
+            try {
+                const res = await fetch(`/api/purchases/last-price?supplierId=${selSupplier.value}&itemId=${item._id}`);
+                const data = await res.json();
+                if (data.success && data.lastPrice !== null) {
+                    toast(`Last purchased from this supplier at ${formatCurrency(data.lastPrice)}`, {
+                        icon: '📦',
+                        duration: 6000,
+                        style: {
+                            borderRadius: '10px',
+                            background: '#333',
+                            color: '#fff',
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching last price:", error);
+            }
+        }
+
         setCart(prev => [...prev, {
             itemId: item._id,
             itemNumber: item.itemNumber,

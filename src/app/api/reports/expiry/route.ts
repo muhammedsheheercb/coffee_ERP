@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 5);
+    targetDate.setDate(targetDate.getDate() + 7);
 
     const expiringBatches = await Item.aggregate([
       { $unwind: "$batches" },

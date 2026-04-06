@@ -169,6 +169,12 @@ export default function DashboardPage() {
                                         {formatCurrency(popupType === "sales" ? (kpi.bankSales || 0) : (kpi.bankPurchases || 0))}
                                     </span>
                                 </div>
+                                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+                                    <span className="font-semibold text-orange-800">Credit {popupType === "sales" ? "Sales" : "Purchases"}</span>
+                                    <span className="font-bold text-orange-600 text-lg">
+                                        {formatCurrency(popupType === "sales" ? (kpi.creditSales || 0) : (kpi.creditPurchases || 0))}
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </Modal>

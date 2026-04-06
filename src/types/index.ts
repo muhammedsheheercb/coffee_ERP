@@ -258,8 +258,10 @@ export interface IKpiData {
   totalPayable: number;
   cashSales?: number;
   bankSales?: number;
+  creditSales?: number;
   cashPurchases?: number;
   bankPurchases?: number;
+  creditPurchases?: number;
 }
 
 export interface IChartData {
