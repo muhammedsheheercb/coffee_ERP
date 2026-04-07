@@ -10,17 +10,15 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const supplierId = searchParams.get("supplierId");
     const itemId = searchParams.get("itemId");
 
-    if (!supplierId || !itemId) {
-      return NextResponse.json({ success: false, error: "Missing supplierId or itemId" }, { status: 400 });
+    if (!itemId) {
+      return NextResponse.json({ success: false, error: "Missing itemId" }, { status: 400 });
     }
 
     await connectDB();
 
     const lastPurchase = await Purchase.findOne({
-      supplierId,
       "items.itemId": itemId
     }).sort({ date: -1, createdAt: -1 }).lean();
 
@@ -33,7 +31,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       lastPrice: purchaseItem ? purchaseItem.price : null,
-      date: lastPurchase.date
+      date: lastPurchase.date,
+      supplierName: lastPurchase.supplierName
     });
   } catch (err) {
     console.error("[GET /api/purchases/last-price]", err);

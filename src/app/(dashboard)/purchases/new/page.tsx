@@ -82,24 +82,22 @@ export default function NewPurchasePage() {
         const item = opt.data as IItem;
         if (cart.find(c => c.itemId === item._id)) return;
 
-        if (selSupplier) {
-            try {
-                const res = await fetch(`/api/purchases/last-price?supplierId=${selSupplier.value}&itemId=${item._id}`);
-                const data = await res.json();
-                if (data.success && data.lastPrice !== null) {
-                    toast(`Last purchased from this supplier at ${formatCurrency(data.lastPrice)}`, {
-                        icon: '📦',
-                        duration: 6000,
-                        style: {
-                            borderRadius: '10px',
-                            background: '#333',
-                            color: '#fff',
-                        },
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching last price:", error);
+        try {
+            const res = await fetch(`/api/purchases/last-price?itemId=${item._id}`);
+            const data = await res.json();
+            if (data.success && data.lastPrice !== null) {
+                toast(`Last purchased at ${formatCurrency(data.lastPrice)}${data.supplierName ? ` from ${data.supplierName}` : ''}`, {
+                    icon: '📦',
+                    duration: 6000,
+                    style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                    },
+                });
             }
+        } catch (error) {
+            console.error("Error fetching last price:", error);
         }
 
         setCart(prev => [...prev, {
