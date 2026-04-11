@@ -42,6 +42,7 @@ export interface IPurchaseDocument extends Document {
   updatedAt: Date;
   createdBy?: mongoose.Types.ObjectId;
   updatedBy?: mongoose.Types.ObjectId;
+  isTaxInvoice?: boolean;
 }
 
 const PurchaseSchema = new Schema<IPurchaseDocument>(
@@ -71,6 +72,7 @@ const PurchaseSchema = new Schema<IPurchaseDocument>(
     date: { type: Date, default: Date.now },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    isTaxInvoice: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

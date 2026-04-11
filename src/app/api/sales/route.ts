@@ -94,7 +94,19 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
     const body = await req.json();
-    const saleNumber = generateUniqueNumber("SALE");
+    const lastSale = await Sale.findOne({ 
+      saleNumber: { $regex: /^(sale-|SALE-)\d{3,6}$/ } 
+    }).sort({ createdAt: -1 }).session(dbSession);
+    
+    let nextNum = 100;
+    if (lastSale && lastSale.saleNumber) {
+      const lastNumString = lastSale.saleNumber.replace("sale-", "").replace("SALE-", "");
+      const lastNum = parseInt(lastNumString);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const saleNumber = `sale-${nextNum.toString().padStart(3, "0")}`;
 
     // 1 — create sale
     const [sale] = await Sale.create([{ 

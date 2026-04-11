@@ -94,7 +94,19 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
     const body = await req.json();
-    const purchaseNumber = generateUniqueNumber("PUR");
+    const lastPurchase = await Purchase.findOne({ 
+      purchaseNumber: { $regex: /^(pur-|PUR-)\d{3,6}$/ } 
+    }).sort({ createdAt: -1 }).session(dbSession);
+    
+    let nextNum = 100;
+    if (lastPurchase && lastPurchase.purchaseNumber) {
+      const lastNumString = lastPurchase.purchaseNumber.replace("pur-", "").replace("PUR-", "");
+      const lastNum = parseInt(lastNumString);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const purchaseNumber = `PUR-${nextNum.toString().padStart(3, "0")}`;
 
     // 1 — create purchase
     const [purchase] = await Purchase.create([{ 

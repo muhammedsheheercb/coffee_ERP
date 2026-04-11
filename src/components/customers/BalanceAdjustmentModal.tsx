@@ -36,6 +36,10 @@ export default function BalanceAdjustmentModal({
     doc.text("------------------------------------------", 40, 22, { align: "center" });
 
     doc.setFontSize(8);
+    const receiptNo = `RCP-${Date.now().toString().slice(-6)}`;
+    doc.setFontSize(8);
+    doc.text(`Receipt #: ${receiptNo}`, 10, 25);
+    
     doc.text(`Date: ${formatDate(date)}`, 10, 30);
     doc.text(`Customer: ${entityName}`, 10, 35);
     doc.text(`Cust #: ${customerNumber || "N/A"}`, 10, 40);
@@ -61,13 +65,18 @@ export default function BalanceAdjustmentModal({
     doc.text("------------------------------------------", 40, 90, { align: "center" });
     doc.text("Thank you for your business!", 40, 100, { align: "center" });
 
-    doc.save(`Receipt-${customerNumber || entityName}.pdf`);
+    doc.save(`Receipt-${receiptNo}.pdf`);
   };
 
   const handleSubmit = async (e: React.FormEvent, shouldPrint: boolean = false) => {
     if (e) e.preventDefault();
     const val = parseFloat(amount);
     if (!amount || isNaN(val)) return;
+
+    if (!isSupplier && (currentBalance || 0) <= 0) {
+        toast.error("You don't have balance amount");
+        return;
+    }
     
     if (shouldPrint && !isSupplier) {
         generatePDF(val);

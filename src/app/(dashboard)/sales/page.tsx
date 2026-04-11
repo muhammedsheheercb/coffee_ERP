@@ -13,8 +13,10 @@ import { useSales } from "@/hooks/useSales";
 import { ISale, PaymentType } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { generateInvoicePDF } from "@/lib/pdf-utils";
 const LIMIT = 10;
 import InvoiceModal from "@/components/dashboard/InvoiceModal";
+import { FileDown } from "lucide-react";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 const PAY_TYPES: { label: string; value: PaymentType | "" }[] = [
@@ -75,7 +77,8 @@ export default function SalesPage() {
         subtotal: viewSale.subtotal,
         tax: viewSale.tax,
         total: viewSale.total,
-        type: "Sale" as const
+        type: "Sale" as const,
+        isTaxInvoice: viewSale.isTaxInvoice
     } : null;
 
     return (
@@ -195,6 +198,24 @@ export default function SalesPage() {
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewSale(s)} />
+                                        <Button 
+                                            variant="ghost" 
+                                            size="xs" 
+                                            icon={<FileDown size={14} className="text-indigo-600" />} 
+                                            onClick={() => generateInvoicePDF({
+                                                number: s.saleNumber,
+                                                customerOrSupplier: s.customerName,
+                                                customerOrSupplierNumber: s.customerNumber,
+                                                date: s.date,
+                                                paymentType: s.paymentType,
+                                                items: s.items,
+                                                subtotal: s.subtotal,
+                                                tax: s.tax,
+                                                total: s.total,
+                                                type: "Sale",
+                                                isTaxInvoice: s.isTaxInvoice
+                                            })} 
+                                        />
                                         {canEdit && (
                                             <Link href={`/sales/edit/${s._id}`}>
                                                 <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-emerald-500" />} />

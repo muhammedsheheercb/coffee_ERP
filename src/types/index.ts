@@ -160,6 +160,7 @@ export interface ISale {
   updatedAt: Date;
   createdBy?: { _id: string; name: string };
   updatedBy?: { _id: string; name: string };
+  isTaxInvoice?: boolean;
 }
 
 export interface ISaleForm {
@@ -172,6 +173,7 @@ export interface ISaleForm {
   total: number;
   paymentType: PaymentType;
   date: string;
+  isTaxInvoice?: boolean;
 }
 
 // ─── Purchase ───────────────────────────────────────
@@ -204,6 +206,7 @@ export interface IPurchase {
   updatedAt: Date;
   createdBy?: { _id: string; name: string };
   updatedBy?: { _id: string; name: string };
+  isTaxInvoice?: boolean;
 }
 
 export interface IPurchaseForm {
@@ -216,6 +219,7 @@ export interface IPurchaseForm {
   total: number;
   paymentType: PaymentType;
   date: string;
+  isTaxInvoice?: boolean;
 }
 
 // ─── Expense ────────────────────────────────────────

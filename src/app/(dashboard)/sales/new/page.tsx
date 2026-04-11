@@ -14,6 +14,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { generateInvoicePDF } from "@/lib/pdf-utils";
 
 import BatchSelectionModal from "@/components/sales/BatchSelectionModal";
 
@@ -47,6 +48,7 @@ export default function NewSalePage() {
     const [date, setDate] = useState(formatDateInput(new Date()));
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isTaxInvoice, setIsTaxInvoice] = useState(false);
     
     // Batch selection state
     const [batchSelectionItem, setBatchSelectionItem] = useState<IItem | null>(null);
@@ -238,6 +240,7 @@ export default function NewSalePage() {
             total,
             paymentType,
             date,
+            isTaxInvoice,
         });
         setSaving(false);
         if (ok) router.push("/sales");
@@ -246,40 +249,20 @@ export default function NewSalePage() {
     const generatePDF = () => {
         if (!selCustomer || cart.length === 0) return;
         const customer = selCustomer.data as ICustomer;
-        const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text("Sales Invoice", 14, 20);
-        doc.setFontSize(11);
-        doc.text(`Customer: ${customer.name} (${customer.customerNumber})`, 14, 32);
-        doc.text(`Mobile: ${customer.mobile}`, 14, 39);
-        doc.text(`Date: ${date}`, 14, 46);
-        doc.text(`Payment: ${paymentType.toUpperCase()}`, 14, 53);
-        
-        autoTable(doc, {
-            startY: 62,
-            head: [["#", "Item", "Batch", "Mfg", "Exp", "Qty", "Price", "Disc", "Total"]],
-            body: cart.map((c, i) => [
-                i + 1, 
-                c.itemName + (c.isFOC ? " (FOC)" : ""), 
-                c.batch || "-", 
-                c.manufacturingDate || "-", 
-                c.expiryDate || "-", 
-                c.quantity, 
-                c.isFOC ? "0.00" : formatCurrency(c.price), 
-                c.isFOC ? "0.00" : formatCurrency(c.discount || 0), 
-                formatCurrency(c.total)
-            ]),
-            foot: [
-                ["", "", "", "", "", "", "", "Subtotal", formatCurrency(subtotal)],
-                ["", "", "", "", "", "", "", "Discount", formatCurrency(totalDiscount)],
-                ["", "", "", "", "", "", "", `Tax (${tax}%)`, formatCurrency(taxAmt)],
-                ["", "", "", "", "", "", "", "Total", formatCurrency(total)],
-            ],
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [79, 70, 229] },
-            footStyles: { fontStyle: "bold", fillColor: [249, 250, 251], textColor: [31, 41, 55] },
+        generateInvoicePDF({
+            number: "PREVIEW",
+            customerOrSupplier: customer.name,
+            customerOrSupplierNumber: customer.customerNumber,
+            customerOrSupplierMobile: customer.mobile,
+            date: date,
+            paymentType: paymentType,
+            items: cart,
+            subtotal,
+            tax,
+            total,
+            type: "Sale",
+            isTaxInvoice
         });
-        doc.save(`invoice-${customer.name}-${Date.now()}.pdf`);
     };
 
     return (
@@ -334,17 +317,29 @@ export default function NewSalePage() {
                             </button>
                         </div>
                     </div>
-                    <Input label="Global Tax (%)" type="number" min={0} max={100} value={tax}
-                        onChange={e => {
-                            const val = e.target.value;
-                            if (val === "") setTax("" as any);
-                            else {
-                                const n = Number(val);
-                                setTax(n < 0 ? 0 : n);
-                            }
-                        }}
-                        placeholder="0"
-                        hint="Applied to total after discounts" />
+                    <div className="flex flex-col gap-2">
+                        <Input label="Global Tax (%)" type="number" min={0} max={100} value={tax}
+                            onChange={e => {
+                                const val = e.target.value;
+                                if (val === "") setTax("" as any);
+                                else {
+                                    const n = Number(val);
+                                    setTax(n < 0 ? 0 : n);
+                                }
+                            }}
+                            placeholder="0"
+                            hint="Applied to total after discounts" />
+                        <div className="flex items-center gap-2 mt-1">
+                            <input 
+                                type="checkbox" 
+                                id="isTaxInvoice" 
+                                checked={isTaxInvoice} 
+                                onChange={e => setIsTaxInvoice(e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <label htmlFor="isTaxInvoice" className="text-sm font-medium text-gray-700 cursor-pointer select-none">Separate Tax Bill Details</label>
+                        </div>
+                    </div>
                 </div>
 
                 <div>
@@ -362,10 +357,8 @@ export default function NewSalePage() {
                         <table className="w-full">
                             <thead className="bg-gray-50/50">
                                 <tr className="border-b border-gray-200">
-                                    <th className="th text-left w-[20%]">Item Details</th>
+                                    <th className="th text-left w-[30%]">Item Details</th>
                                     <th className="th">Batch</th>
-                                    <th className="th">Mfg Date</th>
-                                    <th className="th">Exp Date</th>
                                     <th className="th text-center w-32">Quantity</th>
                                     <th className="th">Price</th>
                                     <th className="th">Discount</th>
@@ -388,22 +381,6 @@ export default function NewSalePage() {
                                                 value={c.batch}
                                                 readOnly
                                                 className="w-full px-2 py-1.5 text-xs text-right border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
-                                            />
-                                        </td>
-                                        <td className="td">
-                                            <input
-                                                type="date"
-                                                value={c.manufacturingDate}
-                                                onChange={e => updateItem(idx, { manufacturingDate: e.target.value })}
-                                                className="w-full px-2 py-1.5 text-[10px] text-right border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-indigo-500"
-                                            />
-                                        </td>
-                                        <td className="td">
-                                            <input
-                                                type="date"
-                                                value={c.expiryDate}
-                                                onChange={e => updateItem(idx, { expiryDate: e.target.value })}
-                                                className="w-full px-2 py-1.5 text-[10px] text-right border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-indigo-500"
                                             />
                                         </td>
                                         <td className="td">

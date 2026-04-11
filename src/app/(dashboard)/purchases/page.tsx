@@ -14,7 +14,9 @@ import { IPurchase, PaymentType } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import InvoiceModal from "@/components/dashboard/InvoiceModal";
+import { generateInvoicePDF } from "@/lib/pdf-utils";
 const LIMIT = 10;
+import { FileDown } from "lucide-react";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 const PAY_TYPES: { label: string; value: PaymentType | "" }[] = [
@@ -74,7 +76,8 @@ export default function PurchasesPage() {
         subtotal: viewPurchase.subtotal,
         tax: viewPurchase.tax,
         total: viewPurchase.total,
-        type: "Purchase" as const
+        type: "Purchase" as const,
+        isTaxInvoice: viewPurchase.isTaxInvoice
     } : null;
 
     return (
@@ -196,6 +199,24 @@ export default function PurchasesPage() {
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewPurchase(p)} />
+                                        <Button 
+                                            variant="ghost" 
+                                            size="xs" 
+                                            icon={<FileDown size={14} className="text-amber-600" />} 
+                                            onClick={() => generateInvoicePDF({
+                                                number: p.purchaseNumber,
+                                                customerOrSupplier: p.supplierName,
+                                                customerOrSupplierNumber: p.supplierNumber,
+                                                date: p.date,
+                                                paymentType: p.paymentType,
+                                                items: p.items,
+                                                subtotal: p.subtotal,
+                                                tax: p.tax,
+                                                total: p.total,
+                                                type: "Purchase",
+                                                isTaxInvoice: p.isTaxInvoice
+                                            })} 
+                                        />
                                         {canEdit && (
                                             <Link href={`/purchases/edit/${p._id}`}>
                                                 <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-amber-500" />} />
