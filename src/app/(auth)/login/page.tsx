@@ -785,7 +785,7 @@ export default function LoginPage() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45, duration: 0.4 }}
+              transition={{ delay: 0.45, duration: 0.5 }}
             >
               <div
                 style={{
