@@ -22,6 +22,9 @@ export default function CustomersPage() {
     const { customers, total, totalPages, loading, fetchCustomers, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
 
     const [search, setSearch] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [purchaseFilter, setPurchaseFilter] = useState<"higher" | "lower" | "">("");
     const [page, setPage] = useState(1);
     const [sortBy, setSortBy] = useState("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -45,13 +48,12 @@ export default function CustomersPage() {
     // Balance History
     const [historyModalOpen, setHistoryModalOpen] = useState(false);
     const [historyCustomer, setHistoryCustomer] = useState<ICustomer | null>(null);
-
     const load = useCallback(() => {
-        fetchCustomers({ search, page, limit: LIMIT, sortBy, sortOrder });
-    }, [search, page, sortBy, sortOrder, fetchCustomers]);
+        fetchCustomers({ search, page, limit: LIMIT, sortBy, sortOrder, startDate, endDate, purchaseFilter });
+    }, [search, page, sortBy, sortOrder, startDate, endDate, purchaseFilter, fetchCustomers]);
 
     useEffect(() => { load(); }, [load]);
-    useEffect(() => { setPage(1); }, [search]);
+    useEffect(() => { setPage(1); }, [search, startDate, endDate, purchaseFilter]);
 
     const handleSort = (col: string) => {
         if (sortBy === col) setSortOrder(o => o === "asc" ? "desc" : "asc");
@@ -119,14 +121,43 @@ export default function CustomersPage() {
                 }
             />
 
-            <div className="filter-bar">
+            <div className="filter-bar flex-wrap gap-4">
                 <Input
-                    placeholder="Search by name, number or mobile…"
+                    placeholder="Search customers…"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     leftIcon={<Search size={15} />}
-                    wrapperClassName="w-80"
+                    wrapperClassName="w-64"
                 />
+                <div className="flex items-center gap-2">
+                    <Input
+                        type="date"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                        className="text-xs"
+                    />
+                    <span className="text-gray-400">to</span>
+                    <Input
+                        type="date"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        className="text-xs"
+                    />
+                </div>
+                <select
+                    className="input-base text-sm py-2 px-3 min-w-[180px]"
+                    value={purchaseFilter}
+                    onChange={e => setPurchaseFilter(e.target.value as any)}
+                >
+                    <option value="">Sort by Purchase Vol.</option>
+                    <option value="higher">Higher Purchases First</option>
+                    <option value="lower">Lower Purchases First</option>
+                </select>
+                {(startDate || endDate || purchaseFilter || search) && (
+                    <Button variant="ghost" size="sm" onClick={() => { setStartDate(""); setEndDate(""); setPurchaseFilter(""); setSearch(""); }} className="text-gray-500">
+                        Clear
+                    </Button>
+                )}
             </div>
 
             <div className="table-wrapper">
@@ -136,6 +167,7 @@ export default function CustomersPage() {
                             <th className="th">Customer # <SortBtn col="customerNumber" /></th>
                             <th className="th">Name <SortBtn col="name" /></th>
                             <th className="th">Mobile</th>
+                            {(purchaseFilter || startDate || endDate) && <th className="th text-right text-indigo-600">Total Purchase</th>}
                             <th className="th text-right">Balance <SortBtn col="creditBalance" /></th>
                             <th className="th">Joined <SortBtn col="createdAt" /></th>
                             {isAdmin && <th className="th text-right">Created By</th>}
@@ -144,14 +176,19 @@ export default function CustomersPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={isAdmin ? 7 : 6} className="py-16 text-center"><Spinner /></td></tr>
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center"><Spinner /></td></tr>
                         ) : customers.length === 0 ? (
-                            <tr><td colSpan={isAdmin ? 7 : 6} className="py-16 text-center text-gray-400 text-sm">No customers found</td></tr>
-                        ) : customers.map((c: ICustomer) => (
+                            <tr><td colSpan={isAdmin ? 8 : 7} className="py-16 text-center text-gray-400 text-sm">No customers found</td></tr>
+                        ) : customers.map((c: any) => (
                             <tr key={c._id} className="tr-hover">
                                 <td className="td font-mono text-xs text-gray-500">{c.customerNumber}</td>
                                 <td className="td font-medium text-gray-800">{c.name}</td>
                                 <td className="td text-gray-500">{c.mobile}</td>
+                                {(purchaseFilter || startDate || endDate) && (
+                                    <td className="td text-right font-bold text-indigo-600">
+                                        {formatCurrency(c.totalPurchases || 0)}
+                                    </td>
+                                )}
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1.5">
                                         <Badge
@@ -214,6 +251,8 @@ export default function CustomersPage() {
                 onClose={() => { setAdjustModalOpen(false); setAdjustCustomer(null); }}
                 onSubmit={handleAdjustBalance}
                 entityName={adjustCustomer?.name || ""}
+                customerNumber={adjustCustomer?.customerNumber}
+                currentBalance={adjustCustomer?.creditBalance}
                 loading={saving}
             />
 

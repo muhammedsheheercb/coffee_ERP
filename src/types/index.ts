@@ -99,6 +99,12 @@ export interface ICustomerForm {
   creditBalance?: number;
 }
 
+export interface ICustomerFilter extends ITableFilter {
+  startDate?: string;
+  endDate?: string;
+  purchaseFilter?: "higher" | "lower";
+}
+
 // ─── Supplier ───────────────────────────────────────
 export interface ISupplier {
   _id: string;

@@ -20,26 +20,92 @@ export async function GET(req: NextRequest) {
     const limit     = parseInt(searchParams.get("limit") || "10");
     const sortBy    = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
+    const startDate = searchParams.get("startDate");
+    const endDate   = searchParams.get("endDate");
+    const purchaseFilter = searchParams.get("purchaseFilter"); // 'higher' or 'lower'
     const skip      = (page - 1) * limit;
 
-    const query = search
-      ? { $or: [
-          { name: { $regex: search, $options: "i" } },
-          { customerNumber: { $regex: search, $options: "i" } },
-          { mobile: { $regex: search, $options: "i" } },
-        ]}
-      : {};
+    let matchQuery: any = {};
+    if (search) {
+      matchQuery.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { customerNumber: { $regex: search, $options: "i" } },
+        { mobile: { $regex: search, $options: "i" } },
+      ];
+    }
 
-    const [customers, total] = await Promise.all([
-      Customer.find(query)
-        .populate("createdBy", "name")
-        .populate("updatedBy", "name")
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Customer.countDocuments(query),
-    ]);
+    // Default sortBy
+    let sortQuery: any = { [sortBy]: sortOrder };
+    if (purchaseFilter) {
+      sortQuery = { totalPurchases: purchaseFilter === "higher" ? -1 : 1 };
+    }
+
+    const pipeline: any[] = [
+      { $match: matchQuery },
+      // Lookup sales to calculate purchase volume
+      {
+        $lookup: {
+          from: "sales",
+          let: { customerId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$customerId", "$$customerId"] },
+                ...(startDate || endDate ? {
+                  date: {
+                    ...(startDate ? { $gte: new Date(startDate) } : {}),
+                    ...(endDate ? { $lte: new Date(`${endDate}T23:59:59.999Z`) } : {}),
+                  }
+                } : {})
+              }
+            },
+            { $group: { _id: null, total: { $sum: "$total" } } }
+          ],
+          as: "purchaseStats"
+        }
+      },
+      {
+        $addFields: {
+          totalPurchases: { $ifNull: [{ $arrayElemAt: ["$purchaseStats.total", 0] }, 0] }
+        }
+      },
+      { $sort: sortQuery },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "createdBy"
+              }
+            },
+            {
+              $lookup: {
+                from: "users",
+                localField: "updatedBy",
+                foreignField: "_id",
+                as: "updatedBy"
+              }
+            },
+            {
+              $addFields: {
+                createdBy: { $arrayElemAt: ["$createdBy", 0] },
+                updatedBy: { $arrayElemAt: ["$updatedBy", 0] }
+              }
+            }
+          ]
+        }
+      }
+    ];
+
+    const results = await Customer.aggregate(pipeline);
+    const customers = results[0].data;
+    const total = results[0].metadata[0]?.total || 0;
 
     return NextResponse.json({
       success: true,

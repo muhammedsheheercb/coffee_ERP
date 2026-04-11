@@ -9,6 +9,9 @@ interface Filters {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  startDate?: string;
+  endDate?: string;
+  purchaseFilter?: "higher" | "lower" | "";
 }
 
 export function useCustomers() {
@@ -26,6 +29,9 @@ export function useCustomers() {
       if (filters.limit)     params.set("limit",     String(filters.limit));
       if (filters.sortBy)    params.set("sortBy",    filters.sortBy);
       if (filters.sortOrder) params.set("sortOrder", filters.sortOrder);
+      if (filters.startDate) params.set("startDate", filters.startDate);
+      if (filters.endDate)   params.set("endDate",   filters.endDate);
+      if (filters.purchaseFilter) params.set("purchaseFilter", filters.purchaseFilter);
 
       const res  = await fetch(`/api/customers?${params}`);
       const data: IPaginatedResponse<ICustomer> = await res.json();

@@ -8,7 +8,7 @@ export interface IExpenseDocument extends Document {
   date: Date;
   reference?: string;
   description?: string;
-  paymentType: "cash" | "credit" | "debit";
+  paymentType: "cash" | "credit" | "debit" | "bank";
   createdAt: Date;
   updatedAt: Date;
   createdBy?: mongoose.Types.ObjectId;
@@ -31,7 +31,7 @@ const ExpenseSchema = new Schema<IExpenseDocument>(
     description: { type: String },
     paymentType: {
       type: String,
-      enum: ["cash", "credit", "debit"],
+      enum: ["cash", "credit", "debit", "bank"],
       required: true,
     },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },

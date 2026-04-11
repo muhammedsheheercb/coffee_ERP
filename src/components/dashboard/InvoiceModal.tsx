@@ -52,11 +52,12 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
         doc.text(`${data.type === "Sale" ? "Customer" : "Supplier"}: ${data.customerOrSupplier}`, 14, 32);
         doc.text(`Number: ${data.customerOrSupplierNumber}`, 14, 39);
         doc.text(`Invoice #: ${data.number}`, 14, 46);
-        doc.text(`Date: ${formatDate(data.date)}`, 14, 53);
-        doc.text(`Payment: ${data.paymentType.toUpperCase()}`, 14, 60);
+        doc.text(`Cafe Direct`, 14, 53);
+        doc.text(`Date: ${formatDate(data.date)}`, 14, 60);
+        doc.text(`Payment: ${data.paymentType.toUpperCase()}`, 14, 67);
 
         autoTable(doc, {
-            startY: 70,
+            startY: 77,
             head: [["#", "Item", "Details", "Qty", "Price", data.type === "Purchase" ? "Stock Value" : "Total"]],
             body: data.items.map((item, i) => [
                 i + 1,
