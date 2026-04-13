@@ -44,6 +44,7 @@ export default function EditSalePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [isTaxInvoice, setIsTaxInvoice] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -70,6 +71,7 @@ export default function EditSalePage() {
                     setPaymentType(s.paymentType);
                     setTax(s.tax);
                     setDate(formatDateInput(s.date));
+                    setIsTaxInvoice(s.isTaxInvoice || false);
                 } else {
                     toast.error("Sale not found");
                     router.push("/sales");
@@ -182,18 +184,55 @@ export default function EditSalePage() {
     const taxAmt = taxableAmount * (tax / 100);
     const total = taxableAmount + taxAmt;
 
-    const handleSave = async () => {
+    const handleSave = async (shouldPrint: boolean = false) => {
         if (!selCustomer || cart.length === 0) return;
         setSaving(true);
         const customer = selCustomer.data as ICustomer;
-        const ok = await updateSale(id as string, {
-            customerId: customer._id, customerName: customer.name,
+        const saleData = {
+            customerId: customer._id, 
+            customerName: customer.name,
             customerNumber: customer.customerNumber,
             items: cart.map(({ _itemRef: _, ...rest }) => rest),
-            subtotal, tax, total, paymentType, date,
+            subtotal, 
+            tax, 
+            total, 
+            paymentType, 
+            date,
+            isTaxInvoice,
+        };
+
+        const response = await fetch(`/api/sales/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(saleData),
         });
+        
+        const data = await response.json();
         setSaving(false);
-        if (ok) router.push("/sales");
+        
+        if (data.success) {
+            toast.success("Sale updated successfully");
+            if (shouldPrint) {
+                const { generateInvoicePDF } = await import("@/lib/pdf-utils");
+                generateInvoicePDF({
+                    number: data.data.saleNumber || "INV",
+                    customerOrSupplier: customer.name,
+                    customerOrSupplierNumber: customer.customerNumber,
+                    customerOrSupplierMobile: customer.mobile,
+                    date: date,
+                    paymentType: paymentType,
+                    items: cart,
+                    subtotal,
+                    tax,
+                    total,
+                    type: "Sale",
+                    isTaxInvoice
+                });
+            }
+            router.push("/sales");
+        } else {
+            toast.error(data.message || "Failed to update sale");
+        }
     };
 
     if (loading) return <div className="py-20 text-center"><Spinner /></div>;
@@ -220,7 +259,7 @@ export default function EditSalePage() {
                     <div>
                         <label className="text-sm font-medium text-gray-700 block mb-1">Payment type</label>
                         <div className="flex flex-col sm:flex-row gap-2">
-                            {(["cash", "credit", "debit"] as PaymentType[]).map(t => (
+                            {(["cash", "credit", "bank"] as PaymentType[]).map(t => (
                                 <button key={t} onClick={() => setPaymentType(t)}
                                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize
                     ${paymentType === t ? "bg-emerald-600 text-white border-emerald-600 shadow-md" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
@@ -229,16 +268,28 @@ export default function EditSalePage() {
                             ))}
                         </div>
                     </div>
-                    <Input label="Tax (%)" type="number" min={0} max={100} value={tax} 
-                        onChange={e => {
-                            const val = e.target.value;
-                            if (val === "") setTax("" as any);
-                            else {
-                                const n = Number(val);
-                                setTax(n < 0 ? 0 : n);
-                            }
-                        }} 
-                    />
+                    <div className="flex flex-col gap-2">
+                        <Input label="Tax (%)" type="number" min={0} max={100} value={tax} 
+                            onChange={e => {
+                                const val = e.target.value;
+                                if (val === "") setTax("" as any);
+                                else {
+                                    const n = Number(val);
+                                    setTax(n < 0 ? 0 : n);
+                                }
+                            }} 
+                        />
+                        <div className="flex items-center gap-2 mt-1">
+                            <input 
+                                type="checkbox" 
+                                id="isTaxInvoice" 
+                                checked={isTaxInvoice} 
+                                onChange={e => setIsTaxInvoice(e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <label htmlFor="isTaxInvoice" className="text-sm font-medium text-gray-700 cursor-pointer select-none">Separate Tax Bill Details</label>
+                        </div>
+                    </div>
                 </div>
 
                 <div>
@@ -359,6 +410,7 @@ export default function EditSalePage() {
 
                 <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
                     <Button variant="outline" onClick={() => router.push("/sales")} className="w-full sm:w-auto">Cancel</Button>
+                    <Button onClick={() => handleSave(true)} loading={saving} variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 w-full sm:w-auto">Update & Print PDF</Button>
                     <Button onClick={() => setConfirmOpen(true)} loading={saving} icon={<Save size={16} />} className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 w-full sm:w-auto">Update Sale</Button>
                 </div>
             </div>

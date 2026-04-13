@@ -26,44 +26,71 @@ export default function BalanceAdjustmentModal({
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "credit">("cash");
 
   const generatePDF = (amountVal: number) => {
-    const doc = new jsPDF({ unit: "mm", format: [80, 150] });
+    const doc = new jsPDF(); // Default is A4
     const newBalance = (currentBalance || 0) - amountVal;
-
+    
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(40, 40, 40);
+    doc.text("CAFE DIRECT", 105, 30, { align: "center" });
+    
     doc.setFontSize(14);
-    doc.text("CAFE DIRECT", 40, 12, { align: "center" });
-    doc.setFontSize(9);
-    doc.text("PAYMENT RECEIPT", 40, 18, { align: "center" });
-    doc.text("------------------------------------------", 40, 22, { align: "center" });
+    doc.setTextColor(100, 100, 100);
+    doc.text("OFFICIAL PAYMENT RECEIPT", 105, 40, { align: "center" });
+    
+    // Horizontal Line
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 45, 190, 45);
 
-    doc.setFontSize(8);
-    const receiptNo = `RCP-${Date.now().toString().slice(-6)}`;
-    doc.setFontSize(8);
-    doc.text(`Receipt #: ${receiptNo}`, 10, 25);
-    
-    doc.text(`Date: ${formatDate(date)}`, 10, 30);
-    doc.text(`Customer: ${entityName}`, 10, 35);
-    doc.text(`Cust #: ${customerNumber || "N/A"}`, 10, 40);
-    doc.text(`Method: ${paymentMethod.toUpperCase()}`, 10, 45);
-
-    doc.text("------------------------------------------", 40, 50, { align: "center" });
-    
-    doc.setFontSize(10);
-    doc.text(`PAID AMOUNT:`, 10, 60);
-    doc.text(`${formatCurrency(amountVal)}`, 70, 60, { align: "right" });
-    
-    doc.setFontSize(8);
-    doc.text(`Previous Balance:`, 10, 70);
-    doc.text(`${formatCurrency(currentBalance || 0)}`, 70, 70, { align: "right" });
-    
-    doc.setFontSize(10);
+    // receipt details
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
     doc.setFont("helvetica", "bold");
-    doc.text(`NEW BALANCE:`, 10, 80);
-    doc.text(`${formatCurrency(newBalance)}`, 70, 80, { align: "right" });
+    const receiptNo = `RCP-${Date.now().toString().slice(-6)}`;
     
+    doc.text(`Receipt Details`, 20, 55);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.text("------------------------------------------", 40, 90, { align: "center" });
-    doc.text("Thank you for your business!", 40, 100, { align: "center" });
+    doc.text(`Receipt #: ${receiptNo}`, 20, 62);
+    doc.text(`Date: ${formatDate(date)}`, 20, 69);
+    doc.text(`Payment Method: ${paymentMethod.toUpperCase()}`, 20, 76);
+
+    // Customer details
+    doc.setFont("helvetica", "bold");
+    doc.text(`Customer Information`, 120, 55);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Customer: ${entityName}`, 120, 62);
+    doc.text(`Customer #: ${customerNumber || "N/A"}`, 120, 69);
+
+    // Payment Box
+    doc.setFillColor(245, 245, 250);
+    doc.rect(20, 90, 170, 60, "F");
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Payment Summary`, 30, 105);
+    
+    doc.setFontSize(11);
+    doc.text(`Previous Balance:`, 30, 115);
+    doc.text(`${formatCurrency(currentBalance || 0)}`, 180, 115, { align: "right" });
+    
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(220, 50, 50); // Reddish for payment
+    doc.text(`AMOUNT PAID:`, 30, 125);
+    doc.text(`- ${formatCurrency(amountVal)}`, 180, 125, { align: "right" });
+    
+    doc.setDrawColor(180, 180, 180);
+    doc.line(30, 130, 180, 130);
+    
+    doc.setTextColor(30, 140, 30); // Greenish for new balance
+    doc.text(`NEW OUTSTANDING BALANCE:`, 30, 140);
+    doc.text(`${formatCurrency(newBalance)}`, 180, 140, { align: "right" });
+
+    // Footer
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for your business!", 105, 170, { align: "center" });
+    doc.text("This is a computer generated receipt.", 105, 175, { align: "center" });
 
     doc.save(`Receipt-${receiptNo}.pdf`);
   };

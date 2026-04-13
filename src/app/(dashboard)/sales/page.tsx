@@ -198,24 +198,6 @@ export default function SalesPage() {
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewSale(s)} />
-                                        <Button 
-                                            variant="ghost" 
-                                            size="xs" 
-                                            icon={<FileDown size={14} className="text-indigo-600" />} 
-                                            onClick={() => generateInvoicePDF({
-                                                number: s.saleNumber,
-                                                customerOrSupplier: s.customerName,
-                                                customerOrSupplierNumber: s.customerNumber,
-                                                date: s.date,
-                                                paymentType: s.paymentType,
-                                                items: s.items,
-                                                subtotal: s.subtotal,
-                                                tax: s.tax,
-                                                total: s.total,
-                                                type: "Sale",
-                                                isTaxInvoice: s.isTaxInvoice
-                                            })} 
-                                        />
                                         {canEdit && (
                                             <Link href={`/sales/edit/${s._id}`}>
                                                 <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-emerald-500" />} />

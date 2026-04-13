@@ -157,7 +157,7 @@ export default function NewPurchasePage() {
     const taxAmt = subtotal * (tax / 100);
     const total = subtotal + taxAmt;
 
-    const handleSave = async () => {
+    const handleSave = async (shouldPrint: boolean = false) => {
         if (!selSupplier || cart.length === 0) return;
 
         // Validation: Mfg, Exp dates and Selling Price are mandatory
@@ -176,7 +176,7 @@ export default function NewPurchasePage() {
 
         setSaving(true);
         const supplier = selSupplier.data as ISupplier;
-        const ok = await createPurchase({
+        const purchaseData = {
             supplierId: supplier._id,
             supplierName: supplier.name,
             supplierNumber: supplier.supplierNumber,
@@ -187,9 +187,46 @@ export default function NewPurchasePage() {
             paymentType,
             date,
             isTaxInvoice,
+        };
+
+        const response = await fetch("/api/purchases", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(purchaseData),
         });
+        
+        const data = await response.json();
         setSaving(false);
-        if (ok) router.push("/purchases");
+        
+        if (data.success) {
+            toast.success("Purchase recorded successfully");
+            if (shouldPrint) {
+                generateInvoicePDF({
+                    number: data.data.purchaseNumber || "PUR-PREVIEW",
+                    customerOrSupplier: supplier.name,
+                    customerOrSupplierNumber: supplier.supplierNumber,
+                    date: date,
+                    paymentType: paymentType,
+                    items: cart.map(c => ({
+                        itemName: c.itemName,
+                        itemNumber: c.itemNumber,
+                        quantity: c.quantity,
+                        price: c.price,
+                        total: c.total,
+                        manufacturingDate: c.manufacturingDate,
+                        expiryDate: c.expiryDate
+                    })),
+                    subtotal,
+                    tax,
+                    total,
+                    type: "Purchase",
+                    isTaxInvoice
+                });
+            }
+            router.push("/purchases");
+        } else {
+            toast.error(data.message || "Failed to record purchase");
+        }
     };
 
     const generatePDF = () => {
@@ -401,18 +438,31 @@ export default function NewPurchasePage() {
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-gray-100">
                     <Button variant="outline" icon={<FileDown size={18} />} onClick={generatePDF}
                         disabled={!selSupplier || cart.length === 0}
                         className="px-6 w-full sm:w-auto"
                     >
-                        Export Purchase Doc
+                        Preview Doc
                     </Button>
-                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 items-center">
-                        <button onClick={() => router.push("/purchases")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline">
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 items-center">
+                        <button onClick={() => router.push("/purchases")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline mr-2">
                             Discard
                         </button>
-                        <Button onClick={() => setConfirmOpen(true)} disabled={!selSupplier || cart.length === 0} className="px-10 h-11 w-full sm:w-auto">
+                        <Button
+                            onClick={() => handleSave(true)}
+                            disabled={!selSupplier || cart.length === 0 || saving}
+                            loading={saving}
+                            variant="outline"
+                            className="px-6 border-amber-200 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
+                        >
+                            Record & Print PDF
+                        </Button>
+                        <Button
+                            onClick={() => setConfirmOpen(true)}
+                            disabled={!selSupplier || cart.length === 0 || saving}
+                            className="px-8 h-11 w-full sm:w-auto bg-amber-600 hover:bg-amber-700 border-amber-600"
+                        >
                             Complete Purchase
                         </Button>
                     </div>

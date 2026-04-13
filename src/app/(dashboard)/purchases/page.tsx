@@ -199,24 +199,6 @@ export default function PurchasesPage() {
                                 <td className="td text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button variant="ghost" size="xs" icon={<Eye size={14} className="text-gray-500" />} onClick={() => setViewPurchase(p)} />
-                                        <Button 
-                                            variant="ghost" 
-                                            size="xs" 
-                                            icon={<FileDown size={14} className="text-amber-600" />} 
-                                            onClick={() => generateInvoicePDF({
-                                                number: p.purchaseNumber,
-                                                customerOrSupplier: p.supplierName,
-                                                customerOrSupplierNumber: p.supplierNumber,
-                                                date: p.date,
-                                                paymentType: p.paymentType,
-                                                items: p.items,
-                                                subtotal: p.subtotal,
-                                                tax: p.tax,
-                                                total: p.total,
-                                                type: "Purchase",
-                                                isTaxInvoice: p.isTaxInvoice
-                                            })} 
-                                        />
                                         {canEdit && (
                                             <Link href={`/purchases/edit/${p._id}`}>
                                                 <Button variant="ghost" size="xs" icon={<Pencil size={14} className="text-amber-500" />} />

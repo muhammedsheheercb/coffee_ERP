@@ -216,7 +216,7 @@ export default function NewSalePage() {
     const taxAmt = taxableAmount * (tax / 100);
     const total = taxableAmount + taxAmt;
 
-    const handleSave = async () => {
+    const handleSave = async (shouldPrint: boolean = false) => {
         if (!selCustomer || cart.length === 0) return;
         
         // Validation: Manufacturing and Expiry dates are mandatory
@@ -230,7 +230,8 @@ export default function NewSalePage() {
 
         setSaving(true);
         const customer = selCustomer.data as ICustomer;
-        const ok = await createSale({
+        
+        const saleData = {
             customerId: customer._id,
             customerName: customer.name,
             customerNumber: customer.customerNumber,
@@ -241,9 +242,39 @@ export default function NewSalePage() {
             paymentType,
             date,
             isTaxInvoice,
+        };
+
+        const response = await fetch("/api/sales", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(saleData),
         });
+        
+        const data = await response.json();
         setSaving(false);
-        if (ok) router.push("/sales");
+        
+        if (data.success) {
+            toast.success("Sale recorded successfully");
+            if (shouldPrint) {
+                generateInvoicePDF({
+                    number: data.data.saleNumber || "PREVIEW",
+                    customerOrSupplier: customer.name,
+                    customerOrSupplierNumber: customer.customerNumber,
+                    customerOrSupplierMobile: customer.mobile,
+                    date: date,
+                    paymentType: paymentType,
+                    items: cart,
+                    subtotal,
+                    tax,
+                    total,
+                    type: "Sale",
+                    isTaxInvoice
+                });
+            }
+            router.push("/sales");
+        } else {
+            toast.error(data.message || "Failed to record sale");
+        }
     };
 
     const generatePDF = () => {
@@ -504,21 +535,30 @@ export default function NewSalePage() {
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-gray-100">
                     <Button variant="outline" icon={<FileDown size={18} />} onClick={generatePDF}
                         disabled={!selCustomer || cart.length === 0}
                         className="px-6 w-full sm:w-auto"
                     >
-                        Export Invoice
+                        Preview Invoice
                     </Button>
-                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 items-center">
-                        <button onClick={() => router.push("/sales")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline">
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 items-center">
+                        <button onClick={() => router.push("/sales")} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline mr-2">
                             Discard
                         </button>
                         <Button
+                            onClick={() => handleSave(true)}
+                            disabled={!selCustomer || cart.length === 0 || saving}
+                            loading={saving}
+                            variant="outline"
+                            className="px-6 border-indigo-200 text-indigo-600 hover:bg-indigo-50 w-full sm:w-auto"
+                        >
+                            Record & Print PDF
+                        </Button>
+                        <Button
                             onClick={() => setConfirmOpen(true)}
-                            disabled={!selCustomer || cart.length === 0}
-                            className="px-10 h-11 w-full sm:w-auto"
+                            disabled={!selCustomer || cart.length === 0 || saving}
+                            className="px-8 h-11 w-full sm:w-auto"
                         >
                             Complete Order
                         </Button>

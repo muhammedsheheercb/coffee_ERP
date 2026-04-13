@@ -1,4 +1,7 @@
-"use client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Printer } from "lucide-react";
+import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { IBalanceHistory } from "@/types";
@@ -15,6 +18,41 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
   const displayHistory = history && history.length > 0
     ? [...history].reverse()
     : [];
+
+  const handlePrintStatement = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(22);
+    doc.text("CAFE DIRECT", 105, 20, { align: "center" });
+    doc.setFontSize(14);
+    doc.text("CUSTOMER ACCOUNT STATEMENT", 105, 30, { align: "center" });
+    
+    // Customer Info
+    doc.setFontSize(11);
+    doc.text(`Customer Name: ${entityName}`, 14, 45);
+    doc.text(`Statement Date: ${formatDate(new Date())}`, 14, 52);
+    
+    // Table
+    autoTable(doc, {
+      startY: 60,
+      head: [["Date", "Entry Details", "Type", "Mode", "Amount (OMR)"]],
+      body: displayHistory.map(item => [
+        item.date ? formatDate(item.date) : "Recent",
+        item.note || "System Adjustment",
+        item.type === "payment" ? "Payment Received" : "Sales/Adjustment",
+        item.paymentMethod ? item.paymentMethod.toUpperCase() : "CREDIT",
+        { 
+            content: `${item.type === 'payment' ? '-' : '+'}${formatCurrency(item.amount || 0)}`,
+            styles: { fontStyle: "bold", textColor: item.type === 'payment' ? [220, 50, 50] : [30, 140, 30] }
+        }
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [63, 81, 181] },
+    });
+    
+    doc.save(`Statement-${entityName}-${new Date().getTime()}.pdf`);
+  };
 
   return (
     <Modal open={open} onClose={onClose} title={`Financial Record: ${entityName}`} size="lg">
@@ -74,8 +112,13 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
           </table>
         </div>
         <div className="bg-gray-50/50 p-4 rounded-xl flex items-center justify-between border border-gray-100">
-           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ledger Total</span>
-           <span className="text-lg font-black text-gray-800">Verified Activity Records</span>
+           <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ledger Total</span>
+                <span className="text-lg font-black text-gray-800">Verified Activity Records</span>
+           </div>
+           <Button icon={<Printer size={16} />} onClick={handlePrintStatement} className="bg-indigo-600 hover:bg-indigo-700">
+               Print Full Statement
+           </Button>
         </div>
       </div>
     </Modal>
