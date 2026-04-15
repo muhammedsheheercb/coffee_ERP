@@ -9,7 +9,7 @@ import SearchSelect from "@/components/ui/SearchSelect";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useSales } from "@/hooks/useSales";
 import { ICustomer, IItem, ISaleItem, ISelectOption, PaymentType, IBatch } from "@/types";
-import { formatCurrency, formatDateInput } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateInput } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useSession } from "next-auth/react";
@@ -388,11 +388,12 @@ export default function NewSalePage() {
                         <table className="w-full">
                             <thead className="bg-gray-50/50">
                                 <tr className="border-b border-gray-200">
-                                    <th className="th text-left w-[30%]">Item Details</th>
+                                    <th className="th text-left w-[25%]">Item Details</th>
                                     <th className="th">Batch</th>
-                                    <th className="th text-center w-32">Quantity</th>
-                                    <th className="th">Price</th>
-                                    <th className="th">Discount</th>
+                                    <th className="th text-center">Dates</th>
+                                    <th className="th text-center w-28">Quantity</th>
+                                    <th className="th text-right">Price</th>
+                                    <th className="th text-right">Disc.</th>
                                     <th className="th text-center">FOC</th>
                                     <th className="th text-right">Total</th>
                                     <th className="th w-10 px-0" />
@@ -411,8 +412,14 @@ export default function NewSalePage() {
                                                 placeholder="Batch"
                                                 value={c.batch}
                                                 readOnly
-                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
+                                                className="w-20 px-2 py-1.5 text-[10px] text-center border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
                                             />
+                                        </td>
+                                        <td className="td">
+                                            <div className="flex flex-col gap-0.5 text-[10px] items-center">
+                                                <span className="text-gray-400">M: <span className="text-gray-600 font-medium">{c.manufacturingDate ? formatDate(c.manufacturingDate) : '-'}</span></span>
+                                                <span className="text-gray-400">E: <span className="text-rose-600 font-bold">{c.expiryDate ? formatDate(c.expiryDate) : '-'}</span></span>
+                                            </div>
                                         </td>
                                         <td className="td">
                                             <div className="flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200 p-0.5">
@@ -550,32 +557,14 @@ export default function NewSalePage() {
                             onClick={() => handleSave(true)}
                             disabled={!selCustomer || cart.length === 0 || saving}
                             loading={saving}
-                            variant="outline"
-                            className="px-6 border-indigo-200 text-indigo-600 hover:bg-indigo-50 w-full sm:w-auto"
+                            className="px-10 h-11 w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100"
                         >
                             Record & Print PDF
-                        </Button>
-                        <Button
-                            onClick={() => setConfirmOpen(true)}
-                            disabled={!selCustomer || cart.length === 0 || saving}
-                            className="px-8 h-11 w-full sm:w-auto"
-                        >
-                            Complete Order
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <ConfirmModal
-                open={confirmOpen}
-                onClose={() => setConfirmOpen(false)}
-                onConfirm={handleSave}
-                title="Confirm Sale Instance"
-                message={`You are about to issue a ${paymentType} sale to ${selCustomer?.data?.name}. Total: ${formatCurrency(total)}. Confirm to proceed?`}
-                confirmLabel="Confirm & Save"
-                variant="info"
-                loading={saving}
-            />
 
             <BatchSelectionModal
                 open={!!batchSelectionItem}

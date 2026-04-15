@@ -124,8 +124,6 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Item Details</th>
-                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">MFG Date</th>
-                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider">EXP Date</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Qty</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Price</th>
                                     <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">{data.type === "Purchase" ? "Stock Value" : "Total"}</th>
@@ -138,8 +136,6 @@ export default function InvoiceModal({ open, onClose, data }: InvoiceModalProps)
                                             <p className="font-medium text-gray-800">{item.itemName}</p>
                                             <p className="text-[10px] font-mono text-gray-400">{item.itemNumber}</p>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-gray-500">{item.manufacturingDate ? formatDate(item.manufacturingDate) : "—"}</td>
-                                        <td className="px-4 py-3 text-xs text-gray-500">{item.expiryDate ? formatDate(item.expiryDate) : "—"}</td>
                                         <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
                                         <td className="px-4 py-3 text-right text-gray-600">{item.isFOC ? "—" : formatCurrency(item.price)}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-gray-800">

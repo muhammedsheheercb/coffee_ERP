@@ -76,7 +76,8 @@ export const generateInvoicePDF = (data: InvoiceData) => {
             ["", "", "", `Tax (${data.tax}%)`, formatCurrency(taxAmt)],
             ["", "", "", "Total", formatCurrency(data.total)],
         ],
-        styles: { fontSize: 9 },
+        styles: { fontSize: 8.5 },
+        headStyles: { fillColor: [63, 81, 181] },
         footStyles: { fontStyle: "bold" },
     });
 

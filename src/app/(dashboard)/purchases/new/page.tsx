@@ -342,12 +342,14 @@ export default function NewPurchasePage() {
                         <table className="w-full">
                             <thead className="bg-gray-50/50">
                                 <tr className="border-b border-gray-200">
-                                    <th className="th text-left w-[35%]">Item Details</th>
-                                    <th className="th">Batch</th>
-                                    <th className="th text-center w-32">Quantity</th>
-                                    <th className="th text-right">Purchase Price</th>
-                                    <th className="th text-right">Sales Price</th>
-                                    <th className="th text-right">Stock Value</th>
+                                    <th className="th text-left w-[25%]">Item Details</th>
+                                    <th className="th text-center">Batch</th>
+                                    <th className="th text-center">Mfg Date</th>
+                                    <th className="th text-center">Exp Date</th>
+                                    <th className="th text-center w-28">Qty</th>
+                                    <th className="th text-right">Cost</th>
+                                    <th className="th text-right">Price</th>
+                                    <th className="th text-right">Value</th>
                                     <th className="th w-10 px-0" />
                                 </tr>
                             </thead>
@@ -364,8 +366,24 @@ export default function NewPurchasePage() {
                                                 placeholder="Batch"
                                                 value={c.batch}
                                                 readOnly
-                                                className="w-full px-2 py-1.5 text-xs text-right border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
+                                                className="w-20 px-2 py-1.5 text-[10px] text-center border border-gray-100 bg-gray-50 rounded-md focus:outline-none text-gray-500 font-mono"
                                                 title="Batch number is automatically generated"
+                                            />
+                                        </td>
+                                        <td className="td">
+                                            <input
+                                                type="date"
+                                                value={c.manufacturingDate}
+                                                onChange={e => updateItem(idx, { manufacturingDate: e.target.value })}
+                                                className="w-28 px-2 py-1.5 text-[10px] border border-gray-200 rounded-md focus:ring-1 focus:ring-amber-500"
+                                            />
+                                        </td>
+                                        <td className="td">
+                                            <input
+                                                type="date"
+                                                value={c.expiryDate}
+                                                onChange={e => updateItem(idx, { expiryDate: e.target.value })}
+                                                className={`w-28 px-2 py-1.5 text-[10px] border rounded-md focus:ring-1 focus:ring-amber-500 ${!c.expiryDate ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
                                             />
                                         </td>
                                         <td className="td">
@@ -453,32 +471,14 @@ export default function NewPurchasePage() {
                             onClick={() => handleSave(true)}
                             disabled={!selSupplier || cart.length === 0 || saving}
                             loading={saving}
-                            variant="outline"
-                            className="px-6 border-amber-200 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
+                            className="px-10 h-11 w-full sm:w-auto bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-100"
                         >
                             Record & Print PDF
-                        </Button>
-                        <Button
-                            onClick={() => setConfirmOpen(true)}
-                            disabled={!selSupplier || cart.length === 0 || saving}
-                            className="px-8 h-11 w-full sm:w-auto bg-amber-600 hover:bg-amber-700 border-amber-600"
-                        >
-                            Complete Purchase
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <ConfirmModal
-                open={confirmOpen}
-                onClose={() => setConfirmOpen(false)}
-                onConfirm={handleSave}
-                title="Confirm Purchase"
-                message={`Save purchase of ${formatCurrency(total)} from ${selSupplier?.label ?? ""}? Item quantities will be updated automatically.`}
-                confirmLabel="Confirm Purchase"
-                variant="info"
-                loading={saving}
-            />
         </div>
     );
 }

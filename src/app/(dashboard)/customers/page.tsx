@@ -261,6 +261,7 @@ export default function CustomersPage() {
                 onClose={() => { setHistoryModalOpen(false); setHistoryCustomer(null); }}
                 history={historyCustomer?.balanceHistory || []}
                 entityName={historyCustomer?.name || ""}
+                currentBalance={historyCustomer?.creditBalance || 0}
             />
 
             <ConfirmModal

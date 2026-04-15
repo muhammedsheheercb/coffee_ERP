@@ -227,6 +227,8 @@ export default function SuppliersPage() {
                 onClose={() => { setHistoryModalOpen(false); setHistorySupplier(null); }}
                 history={historySupplier?.balanceHistory || []}
                 entityName={historySupplier?.name || ""}
+                currentBalance={historySupplier?.creditBalance || 0}
+                isSupplier={true}
             />
 
             <ConfirmModal

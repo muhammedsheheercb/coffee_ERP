@@ -11,9 +11,11 @@ interface BalanceHistoryModalProps {
   onClose: () => void;
   entityName: string;
   history: IBalanceHistory[];
+  currentBalance?: number;
+  isSupplier?: boolean;
 }
 
-export default function BalanceHistoryModal({ open, onClose, entityName, history }: BalanceHistoryModalProps) {
+export default function BalanceHistoryModal({ open, onClose, entityName, history, currentBalance = 0, isSupplier = false }: BalanceHistoryModalProps) {
   // Reverse array to show the latest inserted record at the TOP
   const displayHistory = history && history.length > 0
     ? [...history].reverse()
@@ -26,16 +28,21 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
     doc.setFontSize(22);
     doc.text("CAFE DIRECT", 105, 20, { align: "center" });
     doc.setFontSize(14);
-    doc.text("CUSTOMER ACCOUNT STATEMENT", 105, 30, { align: "center" });
+    doc.text(`${isSupplier ? 'SUPPLIER' : 'CUSTOMER'} ACCOUNT STATEMENT`, 105, 30, { align: "center" });
     
-    // Customer Info
+    // Customer/Supplier Info
     doc.setFontSize(11);
-    doc.text(`Customer Name: ${entityName}`, 14, 45);
+    doc.text(`${isSupplier ? 'Supplier' : 'Customer'} Name: ${entityName}`, 14, 45);
     doc.text(`Statement Date: ${formatDate(new Date())}`, 14, 52);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Current Balance: ${formatCurrency(currentBalance)}`, 14, 60);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
     
     // Table
     autoTable(doc, {
-      startY: 60,
+      startY: 70,
       head: [["Date", "Entry Details", "Type", "Mode", "Amount (OMR)"]],
       body: displayHistory.map(item => [
         item.date ? formatDate(item.date) : "Recent",
@@ -113,8 +120,10 @@ export default function BalanceHistoryModal({ open, onClose, entityName, history
         </div>
         <div className="bg-gray-50/50 p-4 rounded-xl flex items-center justify-between border border-gray-100">
            <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ledger Total</span>
-                <span className="text-lg font-black text-gray-800">Verified Activity Records</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Current Multi-Record Balance</span>
+                <span className={`text-xl font-black ${currentBalance > 0 ? 'text-amber-600' : currentBalance < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {formatCurrency(currentBalance)}
+                </span>
            </div>
            <Button icon={<Printer size={16} />} onClick={handlePrintStatement} className="bg-indigo-600 hover:bg-indigo-700">
                Print Full Statement
